@@ -1,0 +1,19 @@
+{
+  "name": "barberia-agenda",
+  "version": "1.0.0",
+  "description": "Sistema de agenda para barbería",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "nodemon app.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.6.1",
+    "ejs": "^3.1.10",
+    "express": "^4.21.2",
+    "firebase": "^12.1.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
+  }
+}

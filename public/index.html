@@ -1,0 +1,1114 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Barbería - Agenda Online</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #3498db;
+            --accent: #e67e22;
+            --light: #ecf0f1;
+            --dark: #34495e;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            padding-bottom: 60px;
+        }
+        
+        .navbar {
+            background: linear-gradient(135deg, var(--primary), var(--dark));
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        
+        .hero-section {
+            background: linear-gradient(rgba(44, 62, 80, 0.9), rgba(52, 73, 94, 0.9)), url('https://placehold.co/1200x600/2c3e50/ffffff?text=Barbería+Profesional') center/cover;
+            color: white;
+            padding: 100px 0;
+            text-align: center;
+        }
+        
+        .carousel-item {
+            height: 500px;
+        }
+        
+        .carousel-item img {
+            object-fit: cover;
+            height: 100%;
+            width: 100%;
+        }
+        
+        .section-title {
+            color: var(--primary);
+            position: relative;
+            padding-bottom: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .section-title:after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 3px;
+            background: var(--accent);
+        }
+        
+        .service-card {
+            transition: transform 0.3s;
+            border: none;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .service-card:hover {
+            transform: translateY(-10px);
+        }
+        
+        .barber-card {
+            border: none;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: all 0.3s;
+        }
+        
+        .barber-card:hover {
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+        
+        .availability-slot {
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .availability-slot:hover {
+            transform: scale(1.05);
+        }
+        
+        .availability-slot.selected {
+            background-color: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+        
+        .availability-slot.reservado {
+            background-color: #f8d7da;
+            color: #721c24;
+            text-decoration: line-through;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+        
+        .availability-slot.reservado:hover {
+            background-color: #f8d7da;
+            transform: none;
+        }
+        
+        .btn-primary {
+            background-color: var(--accent);
+            border-color: var(--accent);
+        }
+        
+        .btn-primary:hover {
+            background-color: #d35400;
+            border-color: #d35400;
+        }
+        
+        footer {
+            background: linear-gradient(135deg, var(--primary), var(--dark));
+            color: white;
+            padding: 30px 0;
+        }
+        
+        /* Calendario mejorado */
+        #calendario {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .calendario-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 0 10px;
+        }
+        
+        .calendario-header button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 35px;
+            height: 35px;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        
+        .calendario-header button:hover {
+            background: var(--dark);
+        }
+        
+        .calendario-header span {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--primary);
+            text-align: center;
+            flex-grow: 1;
+        }
+        
+        #calendario table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        #calendario th {
+            padding: 12px 8px;
+            text-align: center;
+            font-weight: bold;
+            color: var(--primary);
+            border-bottom: 2px solid #eee;
+        }
+        
+        #calendario td {
+            padding: 12px 8px;
+            text-align: center;
+            cursor: pointer;
+            border-radius: 50%;
+            width: 14.28%;
+            height: 40px;
+            transition: all 0.2s;
+        }
+        
+        #calendario td:hover:not(.disabled):not(.empty) {
+            background-color: #e3f2fd;
+            transform: scale(1.1);
+        }
+        
+        #calendario td.selected {
+            background-color: var(--accent);
+            color: white;
+            font-weight: bold;
+        }
+        
+        #calendario td.today {
+            background-color: #2196f3;
+            color: white;
+            font-weight: bold;
+        }
+        
+        #calendario td.disabled {
+            color: #ccc;
+            cursor: not-allowed;
+            background-color: #f5f5f5;
+        }
+        
+        #calendario td.empty {
+            cursor: default;
+        }
+        
+        #calendario td.bloqueado {
+            background-color: #ffcdd2;
+            color: #c62828;
+            text-decoration: line-through;
+        }
+        
+        #calendario td.bloqueado:hover {
+            background-color: #ffcdd2;
+            transform: none;
+        }
+        
+        #calendario td.pasado {
+            background-color: #e9ecef;
+            color: #6c757d;
+            cursor: not-allowed;
+        }
+        
+        /* Horarios disponibles */
+        .horarios-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .horario-btn {
+            padding: 12px 8px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .horario-btn:hover {
+            background-color: #e3f2fd;
+            transform: translateY(-2px);
+        }
+        
+        .horario-btn.selected {
+            background-color: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+        
+        .horario-btn.reservado {
+            background-color: #f8d7da;
+            color: #721c24;
+            text-decoration: line-through;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+        
+        .horario-btn.reservado:hover {
+            background-color: #f8d7da;
+            transform: none;
+        }
+        
+        .horario-btn.disabled {
+            background-color: #f5f5f5;
+            color: #ccc;
+            cursor: not-allowed;
+        }
+        
+        /* Loading spinner */
+        .spinner-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        /* Mobile optimizations */
+        @media (max-width: 768px) {
+            .hero-section {
+                padding: 60px 0 30px 0;
+            }
+            
+            .carousel-item {
+                height: 200px;
+            }
+            
+            .section-title {
+                font-size: 1.5rem;
+                margin-bottom: 20px;
+            }
+            
+            .form-control, .form-select {
+                font-size: 16px; /* Previene el zoom en iOS */
+            }
+            
+            .table-responsive {
+                font-size: 0.85rem;
+            }
+            
+            .table th, .table td {
+                padding: 0.5rem;
+            }
+            
+            #calendario td {
+                padding: 8px 4px;
+                height: 35px;
+                font-size: 14px;
+            }
+            
+            .calendario-header button {
+                width: 32px;
+                height: 32px;
+                font-size: 14px;
+            }
+            
+            .calendario-header span {
+                font-size: 16px;
+            }
+            
+            .card {
+                margin-bottom: 15px;
+            }
+            
+            .btn {
+                padding: 8px 12px;
+                font-size: 14px;
+            }
+            
+            .btn-sm {
+                padding: 6px 10px;
+                font-size: 13px;
+            }
+            
+            .horarios-container {
+                grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+                gap: 8px;
+            }
+            
+            .horario-btn {
+                padding: 10px 6px;
+                font-size: 13px;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .table-responsive {
+                font-size: 0.75rem;
+            }
+            
+            .table th, .table td {
+                padding: 0.3rem;
+            }
+            
+            .carousel-item {
+                height: 180px;
+            }
+            
+            #calendario td {
+                padding: 6px 2px;
+                height: 30px;
+                font-size: 12px;
+            }
+            
+            .calendario-header button {
+                width: 28px;
+                height: 28px;
+                font-size: 12px;
+            }
+            
+            .calendario-header span {
+                font-size: 14px;
+            }
+            
+            .horarios-container {
+                grid-template-columns: repeat(4, 1fr);
+            }
+            
+            .horario-btn {
+                padding: 8px 4px;
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="bi bi-scissors me-2"></i>Barbería Profesional
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#">Inicio</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#services">Servicios</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#booking">Reservar</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/admin">Admin</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section con Carrusel -->
+    <section class="hero-section">
+        <div class="container">
+            <h1 class="display-4 fw-bold">Barbería Profesional</h1>
+            <p class="lead">La mejor experiencia de corte en la ciudad</p>
+            <a href="#booking" class="btn btn-primary btn-lg mt-3">Reservar Ahora</a>
+        </div>
+    </section>
+
+    <div id="carouselExampleIndicators" class="carousel slide" data-bs-ride="carousel">
+        <div class="carousel-indicators">
+            <button type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide-to="0" class="active"></button>
+            <button type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide-to="1"></button>
+            <button type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide-to="2"></button>
+        </div>
+        <div class="carousel-inner">
+            <div class="carousel-item active">
+                <img src="https://placehold.co/1200x500/3498db/ffffff?text=Salón+de+Barbería" class="d-block w-100" alt="Salón">
+            </div>
+            <div class="carousel-item">
+                <img src="https://placehold.co/1200x500/e67e22/ffffff?text=Cortes+Profesionales" class="d-block w-100" alt="Cortes">
+            </div>
+            <div class="carousel-item">
+                <img src="https://placehold.co/1200x500/2c3e50/ffffff?text=Equipo+Experto" class="d-block w-100" alt="Equipo">
+            </div>
+        </div>
+        <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide="prev">
+            <span class="carousel-control-prev-icon"></span>
+        </button>
+        <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide="next">
+            <span class="carousel-control-next-icon"></span>
+        </button>
+    </div>
+
+    <!-- Servicios -->
+    <section id="services" class="py-5">
+        <div class="container">
+            <h2 class="section-title text-center">Nuestros Servicios</h2>
+            <div class="row" id="serviciosContainer">
+                <!-- Los servicios se cargarán aquí -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Formulario de Reserva -->
+    <section id="booking" class="py-5 bg-light">
+        <div class="container">
+            <h2 class="section-title text-center">Reserva tu Cita</h2>
+            <div class="row justify-content-center">
+                <div class="col-lg-10">
+                    <div class="card shadow">
+                        <div class="card-body">
+                            <form id="bookingForm">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="nombre" class="form-label">Nombre Completo</label>
+                                        <input type="text" class="form-control" id="nombre" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="celular" class="form-label">Celular</label>
+                                        <input type="tel" class="form-control" id="celular" required>
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="servicio" class="form-label">Servicio</label>
+                                        <select class="form-select" id="servicio" required>
+                                            <option value="">Selecciona un servicio</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="col-md-6 mb-3">
+                                        <label for="barbero" class="form-label">Barbero</label>
+                                        <select class="form-select" id="barbero" required>
+                                            <option value="">Selecciona un barbero</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Selecciona una Fecha</label>
+                                        <div id="calendario">
+                                            <div class="calendario-header">
+                                                <button id="prevMonth">«</button>
+                                                <span id="mesAnioActual">Agosto 2024</span>
+                                                <button id="nextMonth">»</button>
+                                            </div>
+                                            <table>
+                                                <thead>
+                                                    <tr>
+                                                        <th>Dom</th>
+                                                        <th>Lun</th>
+                                                        <th>Mar</th>
+                                                        <th>Mié</th>
+                                                        <th>Jue</th>
+                                                        <th>Vie</th>
+                                                        <th>Sáb</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="calendarioBody">
+                                                    <!-- El calendario se generará aquí -->
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Horarios Disponibles</label>
+                                        <div id="horariosContainer" class="horarios-container">
+                                            <div class="alert alert-info w-100">Selecciona una fecha para ver horarios disponibles</div>
+                                        </div>
+                                        <input type="hidden" id="fechaSeleccionada">
+                                        <input type="hidden" id="horarioId">
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="fechaHoraSeleccionada" class="form-label">Fecha y Hora Seleccionada</label>
+                                    <input type="text" class="form-control" id="fechaHoraSeleccionada" readonly>
+                                </div>
+                                
+                                <button type="submit" class="btn btn-primary w-100" id="submitBtn" disabled>
+                                    <i class="bi bi-calendar-check me-2"></i>Confirmar Reserva
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Barberos -->
+    <section class="py-5">
+        <div class="container">
+            <h2 class="section-title text-center">Nuestros Barberos</h2>
+            <div class="row" id="barberosContainer">
+                <!-- Los barberos se cargarán aquí -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="text-center">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4 mb-4 mb-md-0">
+                    <h5>Barbería Profesional</h5>
+                    <p>La mejor experiencia de corte en la ciudad</p>
+                </div>
+                <div class="col-md-4 mb-4 mb-md-0">
+                    <h5>Contacto</h5>
+                    <p><i class="bi bi-telephone me-2"></i>+57 300 123 4567</p>
+                    <p><i class="bi bi-envelope me-2"></i>info@barberiaprofesional.com</p>
+                </div>
+                <div class="col-md-4">
+                    <h5>Horario</h5>
+                    <p>Lunes a Viernes: 10:00 AM - 7:00 PM</p>
+                    <p>Sábado y Domingo: Cerrado</p>
+                </div>
+            </div>
+            <hr class="my-4">
+            <p>&copy; 2023 Barbería Profesional. Todos los derechos reservados.</p>
+        </div>
+    </footer>
+
+    <!-- Modal de Confirmación -->
+    <div class="modal fade" id="confirmationModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Confirmación de Reserva</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="text-center mb-3">
+                        <i class="bi bi-check-circle-fill text-success" style="font-size: 3rem;"></i>
+                    </div>
+                    <p class="text-center">¡Tu reserva ha sido confirmada exitosamente!</p>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item"><strong>Nombre:</strong> <span id="modalNombre"></span></li>
+                        <li class="list-group-item"><strong>Celular:</strong> <span id="modalCelular"></span></li>
+                        <li class="list-group-item"><strong>Servicio:</strong> <span id="modalServicio"></span></li>
+                        <li class="list-group-item"><strong>Barbero:</strong> <span id="modalBarbero"></span></li>
+                        <li class="list-group-item"><strong>Fecha y Hora:</strong> <span id="modalFechaHora"></span></li>
+                    </ul>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Aceptar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Variables globales
+        let barberosData = [];
+        let serviciosData = [];
+        let horariosDisponibles = [];
+        let horariosReservados = []; // Nueva variable para horarios reservados
+        let currentMonth = new Date().getMonth();
+        let currentYear = new Date().getFullYear();
+        let selectedDate = null;
+        let selectedBarberoId = null;
+
+        // Establecer fecha mínima (hoy)
+        const hoy = new Date();
+        const hoyStr = hoy.toISOString().split('T')[0];
+
+        // Cargar servicios
+        async function cargarServicios() {
+            try {
+                const response = await fetch('/api/servicios');
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                serviciosData = await response.json();
+                
+                const servicioSelect = document.getElementById('servicio');
+                servicioSelect.innerHTML = '<option value="">Selecciona un servicio</option>';
+                serviciosData.forEach(servicio => {
+                    const option = document.createElement('option');
+                    option.value = servicio.id;
+                    option.textContent = `${servicio.nombre} - $${servicio.precio || 0}`;
+                    servicioSelect.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error al cargar servicios:', error);
+            }
+        }
+
+        // Cargar barberos
+        async function cargarBarberos() {
+            try {
+                const response = await fetch('/api/barberos');
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                barberosData = await response.json();
+                
+                const barberoSelect = document.getElementById('barbero');
+                barberoSelect.innerHTML = '<option value="">Selecciona un barbero</option>';
+                barberosData.forEach(barbero => {
+                    const option = document.createElement('option');
+                    option.value = barbero.id;
+                    option.textContent = barbero.nombre;
+                    barberoSelect.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error al cargar barberos:', error);
+            }
+        }
+
+        // Cargar barberos para la sección
+        async function cargarBarberosSeccion() {
+            try {
+                const response = await fetch('/api/barberos');
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                const barberos = await response.json();
+                
+                const container = document.getElementById('barberosContainer');
+                container.innerHTML = '';
+                
+                barberos.forEach(barbero => {
+                    const col = document.createElement('div');
+                    col.className = 'col-md-4 mb-4';
+                    col.innerHTML = `
+                        <div class="card barber-card text-center">
+                            <img src="${barbero.imagen || 'https://placehold.co/300x300/3498db/ffffff?text=' + encodeURIComponent(barbero.nombre)}" 
+                                 class="card-img-top rounded-circle mx-auto mt-3" 
+                                 style="width: 150px; height: 150px; object-fit: cover;" 
+                                 alt="${barbero.nombre}">
+                            <div class="card-body">
+                                <h5 class="card-title">${barbero.nombre}</h5>
+                                <p class="card-text">${barbero.descripcion || 'Barbero profesional'}</p>
+                            </div>
+                        </div>
+                    `;
+                    container.appendChild(col);
+                });
+            } catch (error) {
+                console.error('Error al cargar barberos para sección:', error);
+            }
+        }
+
+        // Cargar servicios para la sección
+        async function cargarServiciosSeccion() {
+            try {
+                const response = await fetch('/api/servicios');
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                const servicios = await response.json();
+                
+                const container = document.getElementById('serviciosContainer');
+                container.innerHTML = '';
+                
+                servicios.forEach(servicio => {
+                    const col = document.createElement('div');
+                    col.className = 'col-md-4 mb-4';
+                    col.innerHTML = `
+                        <div class="card service-card h-100">
+                            <img src="${servicio.imagen || 'https://placehold.co/400x250/e67e22/ffffff?text=' + encodeURIComponent(servicio.nombre)}" 
+                                 class="card-img-top" alt="${servicio.nombre}">
+                            <div class="card-body">
+                                <h5 class="card-title">${servicio.nombre}</h5>
+                                <p class="card-text">${servicio.descripcion || 'Servicio profesional'}</p>
+                                <h6 class="text-primary">$${servicio.precio || 0}</h6>
+                            </div>
+                        </div>
+                    `;
+                    container.appendChild(col);
+                });
+            } catch (error) {
+                console.error('Error al cargar servicios para sección:', error);
+            }
+        }
+
+        // Generar calendario
+        async function generarCalendario(month, year) {
+            const date = new Date(year, month, 1);
+            const diasEnMes = new Date(year, month + 1, 0).getDate();
+            const primerDiaSemana = date.getDay();
+            const hoy = new Date();
+            hoy.setHours(0, 0, 0, 0);
+            const hoyStr = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
+            
+            const mesNombres = [
+                'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+                'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+            ];
+            
+            document.getElementById('mesAnioActual').textContent = `${mesNombres[month]} ${year}`;
+            
+            // Obtener bloqueos del mes si hay barbero seleccionado
+            let bloqueos = [];
+            if (selectedBarberoId) {
+                const primerDiaMes = `${year}-${String(month + 1).padStart(2, '0')}-01`;
+                const ultimoDiaMes = `${year}-${String(month + 1).padStart(2, '0')}-${String(diasEnMes).padStart(2, '0')}`;
+                
+                try {
+                    const response = await fetch(`/api/bloqueos/${selectedBarberoId}?fechaInicio=${primerDiaMes}&fechaFin=${ultimoDiaMes}`);
+                    if (response.ok) {
+                        bloqueos = await response.json();
+                    } else {
+                        console.error('Error al obtener bloqueos:', response.status);
+                    }
+                } catch (error) {
+                    console.error('Error al obtener bloqueos:', error);
+                }
+            }
+            
+            let html = '';
+            let dia = 1;
+            
+            // Generar filas del calendario
+            for (let i = 0; i < 6; i++) {
+                html += '<tr>';
+                
+                // Generar columnas (días de la semana)
+                for (let j = 0; j < 7; j++) {
+                    if (i === 0 && j < primerDiaSemana) {
+                        // Espacios en blanco antes del primer día del mes
+                        html += '<td class="empty"></td>';
+                    } else if (dia > diasEnMes) {
+                        // Espacios en blanco después del último día del mes
+                        html += '<td class="empty"></td>';
+                    } else {
+                        const fechaCompleta = `${year}-${String(month + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
+                        const fechaObj = new Date(fechaCompleta);
+                        fechaObj.setHours(0, 0, 0, 0);
+                        
+                        const esFinDeSemana = (j === 0 || j === 6); // Domingo o Sábado
+                        const esHoy = (fechaCompleta === hoyStr);
+                        const esPasado = (fechaObj < hoy);
+                        const tieneBloqueo = bloqueos.some(bloqueo => bloqueo.fecha === fechaCompleta);
+                        
+                        let clases = '';
+                        if (esHoy) clases += ' today';
+                        if (tieneBloqueo) clases += ' bloqueado';
+                        if (esFinDeSemana || esPasado) clases += ' disabled';
+                        if (esPasado) clases += ' pasado';
+                        if (selectedDate === fechaCompleta) clases += ' selected';
+                        
+                        html += `<td data-fecha="${fechaCompleta}" class="${clases}">${dia}</td>`;
+                        dia++;
+                    }
+                }
+                
+                html += '</tr>';
+                
+                // Si ya mostramos todos los días, salir del bucle
+                if (dia > diasEnMes) break;
+            }
+            
+            document.getElementById('calendarioBody').innerHTML = html;
+            
+            // Agregar event listeners a los días
+            document.querySelectorAll('#calendario td[data-fecha]').forEach(td => {
+                td.addEventListener('click', function() {
+                    const fecha = this.dataset.fecha;
+                    const esFinDeSemana = this.classList.contains('disabled');
+                    const estaBloqueado = this.classList.contains('bloqueado');
+                    const esPasado = this.classList.contains('pasado');
+                    
+                    if (!esFinDeSemana && !estaBloqueado && !esPasado) {
+                        // Remover clase selected de todos los días
+                        document.querySelectorAll('#calendario td.selected').forEach(el => {
+                            el.classList.remove('selected');
+                        });
+                        
+                        // Agregar clase selected al día seleccionado
+                        this.classList.add('selected');
+                        selectedDate = fecha;
+                        
+                        // Actualizar campo oculto
+                        document.getElementById('fechaSeleccionada').value = fecha;
+                        
+                        // Cargar horarios disponibles y reservados
+                        cargarHorariosDisponibles(fecha);
+                    }
+                });
+            });
+        }
+
+        // Cargar horarios disponibles y reservados
+        async function cargarHorariosDisponibles(fecha) {
+            if (!selectedBarberoId || !fecha) {
+                document.getElementById('horariosContainer').innerHTML = 
+                    '<div class="alert alert-info w-100">Selecciona un barbero y una fecha</div>';
+                document.getElementById('submitBtn').disabled = true;
+                return;
+            }
+            
+            // Mostrar spinner de carga
+            document.getElementById('horariosContainer').innerHTML = 
+                '<div class="spinner-container"><div class="spinner-border" role="status"></div></div>';
+            
+            try {
+                // Cargar horarios disponibles
+                const response = await fetch(`/api/horarios/${selectedBarberoId}/${fecha}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const horariosDisponibles = await response.json();
+                
+                // Cargar horarios reservados para esa fecha
+                const reservasResponse = await fetch(`/api/reservas-por-fecha/${selectedBarberoId}/${fecha}`);
+                let horariosReservados = [];
+                if (reservasResponse.ok) {
+                    const reservas = await reservasResponse.json();
+                    horariosReservados = reservas.map(r => r.horarioId);
+                }
+                
+                mostrarHorarios(horariosDisponibles, horariosReservados);
+            } catch (error) {
+                console.error('Error al cargar horarios:', error);
+                document.getElementById('horariosContainer').innerHTML = 
+                    '<div class="alert alert-danger w-100">Error al cargar horarios. Por favor intente nuevamente.</div>';
+                document.getElementById('submitBtn').disabled = true;
+            }
+        }
+
+        // Mostrar horarios disponibles y reservados
+        function mostrarHorarios(horariosDisponibles, horariosReservados) {
+            const container = document.getElementById('horariosContainer');
+            container.innerHTML = '';
+            
+            // Verificar que horariosDisponibles sea un array
+            if (!Array.isArray(horariosDisponibles)) {
+                container.innerHTML = '<div class="alert alert-warning w-100">No hay horarios disponibles</div>';
+                document.getElementById('submitBtn').disabled = true;
+                return;
+            }
+            
+            if (horariosDisponibles.length === 0) {
+                container.innerHTML = '<div class="alert alert-warning w-100">No hay horarios disponibles para esta fecha</div>';
+                document.getElementById('submitBtn').disabled = true;
+                return;
+            }
+            
+            horariosDisponibles.forEach(horario => {
+                const hora = new Date(horario.fechaHora).toLocaleTimeString('es-ES', {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                
+                const button = document.createElement('div');
+                button.className = 'horario-btn';
+                button.textContent = hora;
+                button.dataset.fechaHora = horario.fechaHora;
+                
+                // Verificar si el horario está reservado
+                const estaReservado = horariosReservados.includes(horario.fechaHora);
+                
+                if (estaReservado) {
+                    button.classList.add('reservado');
+                    button.title = 'Horario ya reservado';
+                } else {
+                    button.addEventListener('click', function() {
+                        // Remover clase selected de todos los botones
+                        document.querySelectorAll('.horario-btn.selected').forEach(el => {
+                            el.classList.remove('selected');
+                        });
+                        
+                        // Agregar clase selected al botón seleccionado
+                        this.classList.add('selected');
+                        
+                        // Actualizar campos ocultos
+                        document.getElementById('horarioId').value = horario.fechaHora;
+                        document.getElementById('fechaHoraSeleccionada').value = 
+                            new Date(horario.fechaHora).toLocaleString('es-ES', {
+                                weekday: 'long',
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                            });
+                        
+                        // Habilitar botón de submit
+                        document.getElementById('submitBtn').disabled = false;
+                    });
+                }
+                
+                container.appendChild(button);
+            });
+        }
+
+        // Manejar cambio de barbero
+        document.getElementById('barbero').addEventListener('change', function() {
+            selectedBarberoId = this.value;
+            selectedDate = null;
+            document.getElementById('fechaSeleccionada').value = '';
+            document.getElementById('horarioId').value = '';
+            document.getElementById('fechaHoraSeleccionada').value = '';
+            document.getElementById('horariosContainer').innerHTML = 
+                '<div class="alert alert-info w-100">Selecciona una fecha para ver horarios disponibles</div>';
+            document.getElementById('submitBtn').disabled = true;
+            
+            // Regenerar calendario con bloqueos del nuevo barbero
+            generarCalendario(currentMonth, currentYear);
+        });
+
+        // Navegación del calendario
+        document.getElementById('prevMonth').addEventListener('click', function() {
+            currentMonth--;
+            if (currentMonth < 0) {
+                currentMonth = 11;
+                currentYear--;
+            }
+            generarCalendario(currentMonth, currentYear);
+        });
+
+        document.getElementById('nextMonth').addEventListener('click', function() {
+            currentMonth++;
+            if (currentMonth > 11) {
+                currentMonth = 0;
+                currentYear++;
+            }
+            generarCalendario(currentMonth, currentYear);
+        });
+
+        // Manejar envío del formulario
+        document.getElementById('bookingForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            // Obtener valores del formulario
+            const nombre = document.getElementById('nombre').value;
+            const celular = document.getElementById('celular').value;
+            const servicio = document.getElementById('servicio').value;
+            const barberoId = document.getElementById('barbero').value;
+            const horarioId = document.getElementById('horarioId').value;
+            
+            // Validar que se haya seleccionado una fecha y hora
+            if (!horarioId) {
+                alert('Por favor selecciona una fecha y hora');
+                return;
+            }
+            
+            // Verificar que el horario no esté reservado
+            const estaReservado = Array.from(document.querySelectorAll('.horario-btn.reservado'))
+                .some(btn => btn.dataset.fechaHora === horarioId);
+            
+            if (estaReservado) {
+                alert('Este horario ya está reservado. Por favor selecciona otro horario.');
+                return;
+            }
+            
+            // Deshabilitar botón durante el envío
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Procesando...';
+            
+            try {
+                // Enviar reserva a la API
+                const response = await fetch('/api/reservas', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        nombre,
+                        celular,
+                        servicio,
+                        barberoId,
+                        horarioId
+                    })
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    
+                    // Mostrar datos en el modal
+                    document.getElementById('modalNombre').textContent = nombre;
+                    document.getElementById('modalCelular').textContent = celular;
+                    
+                    const servicioObj = serviciosData.find(s => s.id === servicio);
+                    document.getElementById('modalServicio').textContent = servicioObj ? servicioObj.nombre : 'Servicio';
+                    
+                    const barberoObj = barberosData.find(b => b.id === barberoId);
+                    document.getElementById('modalBarbero').textContent = barberoObj ? barberoObj.nombre : 'Barbero';
+                    
+                    document.getElementById('modalFechaHora').textContent = 
+                        new Date(horarioId).toLocaleString('es-ES', {
+                            weekday: 'long',
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        });
+                    
+                    // Mostrar modal de confirmación
+                    const modal = new bootstrap.Modal(document.getElementById('confirmationModal'));
+                    modal.show();
+                    
+                    // Resetear formulario
+                    document.getElementById('bookingForm').reset();
+                    document.getElementById('horariosContainer').innerHTML = 
+                        '<div class="alert alert-info w-100">Selecciona una fecha para ver horarios disponibles</div>';
+                    document.getElementById('submitBtn').disabled = true;
+                    document.getElementById('fechaHoraSeleccionada').value = '';
+                    document.getElementById('fechaSeleccionada').value = '';
+                    document.getElementById('horarioId').value = '';
+                    submitBtn.innerHTML = '<i class="bi bi-calendar-check me-2"></i>Confirmar Reserva';
+                    selectedDate = null;
+                    selectedBarberoId = null;
+                    
+                    // Limpiar selección en calendario
+                    document.querySelectorAll('#calendario td.selected').forEach(el => {
+                        el.classList.remove('selected');
+                    });
+                } else {
+                    const errorData = await response.json().catch(() => ({}));
+                    const errorMessage = errorData.error || `Error HTTP: ${response.status}`;
+                    alert('Error al crear reserva: ' + errorMessage);
+                }
+            } catch (error) {
+                console.error('Error al crear reserva:', error);
+                alert('Error de conexión al crear reserva. Por favor verifica tu conexión.');
+            } finally {
+                // Rehabilitar botón
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="bi bi-calendar-check me-2"></i>Confirmar Reserva';
+            }
+        });
+
+        // Cargar datos iniciales
+        document.addEventListener('DOMContentLoaded', async function() {
+            await cargarBarberos();
+            await cargarServicios();
+            await cargarBarberosSeccion();
+            await cargarServiciosSeccion();
+            
+            // Generar calendario inicial
+            generarCalendario(currentMonth, currentYear);
+        });
+    </script>
+</body>
+</html>
