@@ -1373,7 +1373,7 @@
                 console.error('Error al cargar barberos para disponibilidad:', error);
             }
         }
-        // Disponibilidad - Mostrar días bloqueados
+        // Disponibilidad - Mostrar días bloqueados (SOLUCIÓN AL PROBLEMA DE ZONA HORARIA)
         async function mostrarDiasBloqueados(barberoId) {
             if (!barberoId) {
                 document.getElementById('diasBloqueadosContainer').innerHTML = 
@@ -1396,7 +1396,11 @@
                     } else {
                         let html = '';
                         bloqueos.forEach(bloqueo => {
-                            const fecha = new Date(bloqueo.fecha);
+                            // SOLUCIÓN AL PROBLEMA DE ZONA HORARIA:
+                            // Parsear la fecha como string sin zona horaria
+                            const [year, month, day] = bloqueo.fecha.split('-').map(Number);
+                            const fecha = new Date(year, month - 1, day); // Mes es 0-indexado en JavaScript
+                            
                             const fechaFormateada = fecha.toLocaleDateString('es-ES', {
                                 weekday: 'long',
                                 year: 'numeric',
@@ -1485,7 +1489,7 @@
             }
             generarCalendarioDisp(currentMonthDisp, currentYearDisp);
         });
-        // Disponibilidad - Generar calendario
+        // Disponibilidad - Generar calendario (SOLUCIÓN AL PROBLEMA DE ZONA HORARIA)
         async function generarCalendarioDisp(month, year) {
             if (!selectedBarberoIdDisp) return;
             const date = new Date(year, month, 1);
@@ -1535,7 +1539,17 @@
                         const esFinDeSemana = (j === 0 || j === 6); // Domingo o Sábado
                         const esHoy = (fechaCompleta === hoyStr);
                         const esPasado = (fechaObj < hoy);
-                        const tieneBloqueo = bloqueos.some(bloqueo => bloqueo.fecha === fechaCompleta);
+                        
+                        // SOLUCIÓN AL PROBLEMA DE ZONA HORARIA:
+                        // Verificar si hay bloqueo para esta fecha comparando strings
+                        const tieneBloqueo = bloqueos.some(bloqueo => {
+                            // Parsear la fecha del bloqueo como string sin zona horaria
+                            const [bYear, bMonth, bDay] = bloqueo.fecha.split('-').map(Number);
+                            const fechaBloqueo = new Date(bYear, bMonth - 1, bDay);
+                            const fechaBloqueoStr = `${fechaBloqueo.getFullYear()}-${String(fechaBloqueo.getMonth() + 1).padStart(2, '0')}-${String(fechaBloqueo.getDate()).padStart(2, '0')}`;
+                            return fechaBloqueoStr === fechaCompleta;
+                        });
+                        
                         let clases = '';
                         if (esHoy) clases += ' today';
                         if (tieneBloqueo) clases += ' bloqueado';
@@ -1628,19 +1642,16 @@
                 if (reservasData.length === 0) await cargarReservas();
                 if (barberosData.length === 0) await cargarBarberos();
                 if (serviciosData.length === 0) await cargarServicios();
-                
                 // Calcular estadísticas básicas
                 const totalReservas = reservasData.length;
                 const confirmadas = reservasData.filter(r => r.estado === 'confirmado').length;
                 const pendientes = reservasData.filter(r => r.estado === 'pendiente').length;
                 const rechazadas = reservasData.filter(r => r.estado === 'rechazado').length;
-                
                 // Actualizar resumen
                 document.getElementById('totalReservas').textContent = totalReservas;
                 document.getElementById('reservasConfirmadas').textContent = confirmadas;
                 document.getElementById('reservasPendientes').textContent = pendientes;
                 document.getElementById('reservasRechazadas').textContent = rechazadas;
-                
                 // Crear gráficos
                 crearGraficoEstado();
                 crearGraficoBarbero();
@@ -1650,22 +1661,19 @@
                 console.error('Error al cargar estadísticas:', error);
             }
         }
-        // Crear gráfico de reservas por estado
+        // Crear gráfico de reservas por estado (CORREGIDO)
         function crearGraficoEstado() {
             const ctx = document.getElementById('reservasEstadoChart').getContext('2d');
-            
             // Destruir gráfico existente si hay uno
             if (reservasEstadoChart) {
                 reservasEstadoChart.destroy();
             }
-            
             const estados = ['confirmado', 'pendiente', 'rechazado'];
             const conteos = [
                 reservasData.filter(r => r.estado === 'confirmado').length,
                 reservasData.filter(r => r.estado === 'pendiente').length,
                 reservasData.filter(r => r.estado === 'rechazado').length
             ];
-            
             reservasEstadoChart = new Chart(ctx, {
                 type: 'doughnut',
                 data: {
@@ -1699,15 +1707,13 @@
                 }
             });
         }
-        // Crear gráfico de reservas por barbero
+        // Crear gráfico de reservas por barbero (CORREGIDO)
         function crearGraficoBarbero() {
             const ctx = document.getElementById('reservasBarberoChart').getContext('2d');
-            
             // Destruir gráfico existente si hay uno
             if (reservasBarberoChart) {
                 reservasBarberoChart.destroy();
             }
-            
             // Agrupar reservas por barbero
             const reservasPorBarbero = {};
             reservasData.forEach(reserva => {
@@ -1715,10 +1721,8 @@
                 const nombreBarbero = barbero ? barbero.nombre : 'Desconocido';
                 reservasPorBarbero[nombreBarbero] = (reservasPorBarbero[nombreBarbero] || 0) + 1;
             });
-            
             const nombres = Object.keys(reservasPorBarbero);
             const conteos = Object.values(reservasPorBarbero);
-            
             reservasBarberoChart = new Chart(ctx, {
                 type: 'bar',
                 data: {
@@ -1749,15 +1753,13 @@
                 }
             });
         }
-        // Crear gráfico de reservas por servicio
+        // Crear gráfico de reservas por servicio (CORREGIDO)
         function crearGraficoServicio() {
             const ctx = document.getElementById('reservasServicioChart').getContext('2d');
-            
             // Destruir gráfico existente si hay uno
             if (reservasServicioChart) {
                 reservasServicioChart.destroy();
             }
-            
             // Agrupar reservas por servicio
             const reservasPorServicio = {};
             reservasData.forEach(reserva => {
@@ -1765,10 +1767,8 @@
                 const nombreServicio = servicio ? servicio.nombre : 'Desconocido';
                 reservasPorServicio[nombreServicio] = (reservasPorServicio[nombreServicio] || 0) + 1;
             });
-            
             const nombres = Object.keys(reservasPorServicio);
             const conteos = Object.values(reservasPorServicio);
-            
             reservasServicioChart = new Chart(ctx, {
                 type: 'pie',
                 data: {
@@ -1796,19 +1796,16 @@
                 }
             });
         }
-        // Crear gráfico de reservas por día de la semana
+        // Crear gráfico de reservas por día de la semana (CORREGIDO)
         function crearGraficoDia() {
             const ctx = document.getElementById('reservasDiaChart').getContext('2d');
-            
             // Destruir gráfico existente si hay uno
             if (reservasDiaChart) {
                 reservasDiaChart.destroy();
             }
-            
             // Agrupar reservas por día de la semana
             const diasSemana = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
             const reservasPorDia = Array(7).fill(0);
-            
             reservasData.forEach(reserva => {
                 if (reserva.horarioId) {
                     const fecha = new Date(reserva.horarioId);
@@ -1818,7 +1815,6 @@
                     }
                 }
             });
-            
             reservasDiaChart = new Chart(ctx, {
                 type: 'line',
                 data: {
