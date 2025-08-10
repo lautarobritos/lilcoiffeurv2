@@ -14,13 +14,11 @@
             --light: #ecf0f1;
             --dark: #34495e;
         }
-        
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: #f8f9fa;
             padding-bottom: 60px;
         }
-        
         .sidebar {
             background: linear-gradient(135deg, var(--primary), var(--dark));
             color: white;
@@ -29,42 +27,34 @@
             z-index: 1000;
             width: 250px;
         }
-        
         .main-content {
             margin-left: 250px;
         }
-        
         .status-pending {
             background-color: #fff3cd;
             color: #856404;
         }
-        
         .status-confirmed {
             background-color: #d4edda;
             color: #155724;
         }
-        
         .status-rejected {
             background-color: #f8d7da;
             color: #721c24;
         }
-        
         .status-available {
             background-color: #cce5ff;
             color: #004085;
         }
-        
         .nav-link.active {
             background-color: rgba(255,255,255,0.1);
             border-radius: 5px;
         }
-        
         #loginSection {
             max-width: 400px;
             margin: 50px auto;
             padding: 20px;
         }
-        
         /* Calendario mejorado */
         #calendario {
             background: white;
@@ -73,7 +63,6 @@
             padding: 20px;
             margin-bottom: 20px;
         }
-        
         .calendario-header {
             display: flex;
             justify-content: space-between;
@@ -81,7 +70,6 @@
             margin-bottom: 20px;
             padding: 0 10px;
         }
-        
         .calendario-header button {
             background: var(--primary);
             color: white;
@@ -96,11 +84,9 @@
             justify-content: center;
             flex-shrink: 0;
         }
-        
         .calendario-header button:hover {
             background: var(--dark);
         }
-        
         .calendario-header span {
             font-size: 18px;
             font-weight: bold;
@@ -108,12 +94,10 @@
             text-align: center;
             flex-grow: 1;
         }
-        
         #calendario table {
             width: 100%;
             border-collapse: collapse;
         }
-        
         #calendario th {
             padding: 12px 8px;
             text-align: center;
@@ -121,7 +105,6 @@
             color: var(--primary);
             border-bottom: 2px solid #eee;
         }
-        
         #calendario td {
             padding: 12px 8px;
             text-align: center;
@@ -131,51 +114,42 @@
             height: 40px;
             transition: all 0.2s;
         }
-        
         #calendario td:hover:not(.disabled):not(.empty) {
             background-color: #e3f2fd;
             transform: scale(1.1);
         }
-        
         #calendario td.selected {
             background-color: var(--accent);
             color: white;
             font-weight: bold;
         }
-        
         #calendario td.today {
             background-color: #2196f3;
             color: white;
             font-weight: bold;
         }
-        
         #calendario td.disabled {
             color: #ccc;
             cursor: not-allowed;
             background-color: #f5f5f5;
         }
-        
         #calendario td.empty {
             cursor: default;
         }
-        
         #calendario td.bloqueado {
             background-color: #ffcdd2;
             color: #c62828;
             text-decoration: line-through;
         }
-        
         #calendario td.bloqueado:hover {
             background-color: #ffcdd2;
             transform: none;
         }
-        
         #calendario td.pasado {
             background-color: #e9ecef;
             color: #6c757d;
             cursor: not-allowed;
         }
-        
         /* Bloqueo item */
         .bloqueo-item {
             border-left: 3px solid var(--accent);
@@ -184,32 +158,26 @@
             background-color: #f8f9fa;
             border-radius: 5px;
         }
-        
         .bloqueo-item .fecha {
             font-weight: bold;
             color: var(--primary);
         }
-        
         .bloqueo-item .motivo {
             font-size: 0.9em;
             color: #6c757d;
         }
-        
         /* Mobile optimizations */
         @media (max-width: 992px) {
             .sidebar {
                 transform: translateX(-100%);
                 width: 280px;
             }
-            
             .sidebar.active {
                 transform: translateX(0);
             }
-            
             .main-content {
                 margin-left: 0;
             }
-            
             .overlay {
                 position: fixed;
                 top: 0;
@@ -220,87 +188,70 @@
                 z-index: 999;
                 display: none;
             }
-            
             .overlay.active {
                 display: block;
             }
         }
-        
         @media (max-width: 768px) {
             #loginSection {
                 margin: 20px;
                 padding: 15px;
             }
-            
             .section-title {
                 font-size: 1.5rem;
             }
-            
             .form-control, .form-select {
                 font-size: 16px; /* Previene el zoom en iOS */
             }
-            
             .table-responsive {
                 font-size: 0.85rem;
             }
-            
             .table th, .table td {
                 padding: 0.5rem;
             }
-            
             #calendario td {
                 padding: 8px 4px;
                 height: 35px;
                 font-size: 14px;
             }
-            
             .calendario-header button {
                 width: 28px;
                 height: 28px;
                 font-size: 12px;
             }
-            
             .calendario-header span {
                 font-size: 14px;
             }
-            
             .card {
                 margin-bottom: 15px;
             }
-            
             .btn {
                 padding: 6px 10px;
                 font-size: 13px;
             }
-            
             .btn-sm {
                 padding: 4px 8px;
                 font-size: 12px;
             }
-            
             /* Tabla compacta para móviles */
             .table-mobile-compact th,
             .table-mobile-compact td {
                 white-space: nowrap;
             }
-            
             .table-mobile-compact .acciones-col {
                 width: 1%;
                 white-space: nowrap;
             }
-            
             /* Ocultar columnas en móviles */
             .table-mobile-compact th:nth-child(n+4):nth-child(-n+6),
             .table-mobile-compact td:nth-child(n+4):nth-child(-n+6) {
                 display: none;
             }
         }
-        
         @media (max-width: 576px) {
             .table-responsive {
                 font-size: 0.75rem;
             }
-            
             .table th, .table td {
                 padding: 0.3rem;
             }
@@ -334,10 +285,8 @@
             </div>
         </div>
     </div>
-
     <!-- Overlay para menú móvil -->
     <div class="overlay" id="overlay"></div>
-
     <!-- Admin Panel (oculto inicialmente) -->
     <div id="adminPanel" class="d-none">
         <div class="container-fluid">
@@ -375,7 +324,6 @@
                         </ul>
                     </div>
                 </nav>
-
                 <!-- Main Content -->
                 <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 main-content">
                     <!-- Navbar para móviles -->
@@ -387,13 +335,11 @@
                             </button>
                         </div>
                     </nav>
-
                     <!-- Reservas Tab -->
                     <div class="tab-content" id="reservas-tab">
                         <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
                             <h1 class="h2">Gestión de Reservas</h1>
                         </div>
-
                         <!-- Filtros -->
                         <div class="row mb-4">
                             <div class="col-md-3 col-sm-6 mb-2">
@@ -418,7 +364,6 @@
                                 </button>
                             </div>
                         </div>
-
                         <!-- Tabla de Reservas -->
                         <div class="card">
                             <div class="card-header">
@@ -452,7 +397,6 @@
                             </div>
                         </div>
                     </div>
-
                     <!-- Barberos Tab -->
                     <div class="tab-content d-none" id="barberos-tab">
                         <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
@@ -461,12 +405,10 @@
                                 <i class="bi bi-plus-lg me-1"></i>Agregar Barbero
                             </button>
                         </div>
-
                         <div class="row" id="barberosContainer">
                             <!-- Los barberos se cargarán aquí -->
                         </div>
                     </div>
-
                     <!-- Servicios Tab -->
                     <div class="tab-content d-none" id="servicios-tab">
                         <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
@@ -475,18 +417,15 @@
                                 <i class="bi bi-plus-lg me-1"></i>Agregar Servicio
                             </button>
                         </div>
-
                         <div class="row" id="serviciosContainer">
                             <!-- Los servicios se cargarán aquí -->
                         </div>
                     </div>
-
                     <!-- Disponibilidad Tab -->
                     <div class="tab-content d-none" id="disponibilidad-tab">
                         <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
                             <h1 class="h2">Gestión de Disponibilidad</h1>
                         </div>
-
                         <div class="row">
                             <div class="col-md-4 mb-4">
                                 <div class="card">
@@ -499,7 +438,6 @@
                                         </select>
                                     </div>
                                 </div>
-
                                 <div class="card mt-3">
                                     <div class="card-header">
                                         <h5 class="card-title mb-0">Bloquear Día</h5>
@@ -527,7 +465,6 @@
                                         </button>
                                     </div>
                                 </div>
-                                
                                 <!-- Mostrar días bloqueados -->
                                 <div class="card mt-3">
                                     <div class="card-header">
@@ -540,7 +477,6 @@
                                     </div>
                                 </div>
                             </div>
-
                             <div class="col-md-8">
                                 <div class="card">
                                     <div class="card-body">
@@ -575,7 +511,6 @@
                 </main>
             </div>
         </div>
-
         <!-- Modal para Barbero -->
         <div class="modal fade" id="barberoModal" tabindex="-1">
             <div class="modal-dialog">
@@ -604,7 +539,6 @@
                 </div>
             </div>
         </div>
-
         <!-- Modal para Servicio -->
         <div class="modal fade" id="servicioModal" tabindex="-1">
             <div class="modal-dialog">
@@ -637,7 +571,6 @@
                 </div>
             </div>
         </div>
-
         <!-- Modal para detalles de reserva -->
         <div class="modal fade" id="detalleReservaModal" tabindex="-1">
             <div class="modal-dialog">
@@ -675,7 +608,6 @@
                 </div>
             </div>
         </div>
-
         <!-- Modal para confirmar acciones -->
         <div class="modal fade" id="actionModal" tabindex="-1">
             <div class="modal-dialog">
@@ -695,14 +627,12 @@
             </div>
         </div>
     </div>
-
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script type="module">
         // Importar Firebase
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
         import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, where, orderBy } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
-
         // Configuración de Firebase
         const firebaseConfig = {
             apiKey: "<%= process.env.FIREBASE_API_KEY %>",
@@ -712,12 +642,10 @@
             messagingSenderId: "<%= process.env.FIREBASE_MESSAGING_SENDER_ID %>",
             appId: "<%= process.env.FIREBASE_APP_ID %>"
         };
-
         // Inicializar Firebase
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-
         // Variables globales
         let currentAction = null;
         let currentReservaId = null;
@@ -730,7 +658,6 @@
         let selectedBarberoIdDisp = '';
         let selectedDateDisp = null;
         let bloqueosData = [];
-
         // Elementos del DOM
         const loginSection = document.getElementById('loginSection');
         const adminPanel = document.getElementById('adminPanel');
@@ -754,7 +681,6 @@
         const sidebar = document.querySelector('.sidebar');
         const overlay = document.getElementById('overlay');
         const menuToggle = document.getElementById('menuToggle');
-
         // Verificar estado de autenticación
         onAuthStateChanged(auth, (user) => {
             if (user) {
@@ -768,32 +694,26 @@
                 adminPanel.classList.add('d-none');
             }
         });
-
         // Toggle menú móvil
         menuToggle.addEventListener('click', function() {
             sidebar.classList.toggle('active');
             overlay.classList.toggle('active');
         });
-
         // Cerrar menú al hacer clic en overlay
         overlay.addEventListener('click', function() {
             sidebar.classList.remove('active');
             overlay.classList.remove('active');
         });
-
         // Función de login
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
-            
             // Mostrar spinner
             loginText.classList.add('d-none');
             loginSpinner.classList.remove('d-none');
             loginBtn.disabled = true;
             loginError.classList.add('d-none');
-            
             try {
                 await signInWithEmailAndPassword(auth, email, password);
                 // El estado de autenticación se manejará automáticamente
@@ -808,7 +728,6 @@
                 loginBtn.disabled = false;
             }
         });
-
         // Función de logout
         logoutBtn.addEventListener('click', async () => {
             try {
@@ -817,41 +736,33 @@
                 console.error('Error al cerrar sesión:', error);
             }
         });
-
         // Cargar datos iniciales
         async function cargarDatosIniciales() {
             await cargarBarberos();
             await cargarServicios();
             await cargarReservas();
         }
-
         // Navegación entre tabs
         document.querySelectorAll('.nav-link').forEach(link => {
             link.addEventListener('click', function(e) {
                 e.preventDefault();
-                
                 // Cerrar menú en móviles
                 sidebar.classList.remove('active');
                 overlay.classList.remove('active');
-                
                 // Remover active de todos los links
                 document.querySelectorAll('.nav-link').forEach(l => {
                     l.classList.remove('active');
                 });
-                
                 // Agregar active al link clickeado
                 this.classList.add('active');
-                
                 // Ocultar todos los tabs
                 document.querySelectorAll('.tab-content').forEach(tab => {
                     tab.classList.add('d-none');
                 });
-                
                 // Mostrar el tab correspondiente
                 const tabName = this.dataset.tab;
                 currentTab = tabName;
                 document.getElementById(`${tabName}-tab`).classList.remove('d-none');
-                
                 // Cargar datos según el tab
                 switch(tabName) {
                     case 'reservas':
@@ -870,7 +781,6 @@
                 }
             });
         });
-
         // Cargar barberos para filtros y selects
         async function cargarBarberos() {
             try {
@@ -879,7 +789,6 @@
                 barberosSnapshot.forEach((doc) => {
                     barberosData.push({ id: doc.id, ...doc.data() });
                 });
-                
                 // Actualizar filtro de barberos
                 filterBarber.innerHTML = '<option value="">Todos los barberos</option>';
                 barberosData.forEach(barbero => {
@@ -888,7 +797,6 @@
                     option.textContent = barbero.nombre;
                     filterBarber.appendChild(option);
                 });
-                
                 // Si estamos en el tab de barberos, mostrarlos
                 if (currentTab === 'barberos') {
                     mostrarBarberos();
@@ -901,17 +809,14 @@
                 }
             }
         }
-
         // Mostrar barberos en el tab correspondiente
         function mostrarBarberos() {
             const container = document.getElementById('barberosContainer');
             container.innerHTML = '';
-            
             if (barberosData.length === 0) {
                 container.innerHTML = '<div class="col-12"><div class="alert alert-info">No hay barberos registrados</div></div>';
                 return;
             }
-            
             barberosData.forEach(barbero => {
                 const col = document.createElement('div');
                 col.className = 'col-md-4 mb-4';
@@ -933,7 +838,6 @@
                 `;
                 container.appendChild(col);
             });
-            
             // Agregar event listeners
             document.querySelectorAll('.edit-barbero').forEach(btn => {
                 btn.addEventListener('click', function() {
@@ -941,7 +845,6 @@
                     editarBarbero(id);
                 });
             });
-            
             document.querySelectorAll('.delete-barbero').forEach(btn => {
                 btn.addEventListener('click', function() {
                     const id = this.dataset.id;
@@ -949,7 +852,6 @@
                 });
             });
         }
-
         // Editar barbero
         function editarBarbero(id) {
             const barbero = barberosData.find(b => b.id === id);
@@ -960,12 +862,10 @@
                 barberoModal.show();
             }
         }
-
         // Eliminar barbero
         function eliminarBarbero(id) {
             showActionModal('delete-barbero', id, '¿Eliminar este barbero? Esta acción no se puede deshacer.');
         }
-
         // Guardar barbero
         document.getElementById('saveBarberoBtn').addEventListener('click', async function() {
             const id = document.getElementById('barberoId').value;
@@ -973,7 +873,6 @@
                 nombre: document.getElementById('barberoNombre').value,
                 descripcion: document.getElementById('barberoDescripcion').value
             };
-            
             try {
                 if (id) {
                     // Actualizar barbero existente
@@ -982,7 +881,6 @@
                     // Crear nuevo barbero
                     await addDoc(collection(db, 'barberos'), barbero);
                 }
-                
                 barberoModal.hide();
                 document.getElementById('barberoForm').reset();
                 document.getElementById('barberoId').value = '';
@@ -992,7 +890,6 @@
                 alert('Error al guardar barbero: ' + error.message);
             }
         });
-
         // Cargar servicios
         async function cargarServicios() {
             try {
@@ -1001,7 +898,6 @@
                 serviciosSnapshot.forEach((doc) => {
                     serviciosData.push({ id: doc.id, ...doc.data() });
                 });
-                
                 // Si estamos en el tab de servicios, mostrarlos
                 if (currentTab === 'servicios') {
                     mostrarServicios();
@@ -1014,17 +910,14 @@
                 }
             }
         }
-
         // Mostrar servicios
         function mostrarServicios() {
             const container = document.getElementById('serviciosContainer');
             container.innerHTML = '';
-            
             if (serviciosData.length === 0) {
                 container.innerHTML = '<div class="col-12"><div class="alert alert-info">No hay servicios registrados</div></div>';
                 return;
             }
-            
             serviciosData.forEach(servicio => {
                 const col = document.createElement('div');
                 col.className = 'col-md-4 mb-4';
@@ -1049,7 +942,6 @@
                 `;
                 container.appendChild(col);
             });
-            
             // Agregar event listeners
             document.querySelectorAll('.edit-servicio').forEach(btn => {
                 btn.addEventListener('click', function() {
@@ -1057,7 +949,6 @@
                     editarServicio(id);
                 });
             });
-            
             document.querySelectorAll('.delete-servicio').forEach(btn => {
                 btn.addEventListener('click', function() {
                     const id = this.dataset.id;
@@ -1065,7 +956,6 @@
                 });
             });
         }
-
         // Editar servicio
         function editarServicio(id) {
             const servicio = serviciosData.find(s => s.id === id);
@@ -1077,12 +967,10 @@
                 servicioModal.show();
             }
         }
-
         // Eliminar servicio
         function eliminarServicio(id) {
             showActionModal('delete-servicio', id, '¿Eliminar este servicio? Esta acción no se puede deshacer.');
         }
-
         // Guardar servicio
         document.getElementById('saveServicioBtn').addEventListener('click', async function() {
             const id = document.getElementById('servicioId').value;
@@ -1091,7 +979,6 @@
                 descripcion: document.getElementById('servicioDescripcion').value,
                 precio: parseFloat(document.getElementById('servicioPrecio').value)
             };
-            
             try {
                 if (id) {
                     // Actualizar servicio existente
@@ -1100,7 +987,6 @@
                     // Crear nuevo servicio
                     await addDoc(collection(db, 'servicios'), servicio);
                 }
-                
                 servicioModal.hide();
                 document.getElementById('servicioForm').reset();
                 document.getElementById('servicioId').value = '';
@@ -1110,7 +996,6 @@
                 alert('Error al guardar servicio: ' + error.message);
             }
         });
-
         // Cargar reservas
         async function cargarReservas() {
             try {
@@ -1131,12 +1016,10 @@
                 `;
             }
         }
-
         // Renderizar tabla de reservas (MEJORADA)
         function renderReservas(reservasFiltradas) {
             const reservasMostrar = reservasFiltradas || reservasData;
             reservasTable.innerHTML = '';
-
             if (reservasMostrar.length === 0) {
                 reservasTable.innerHTML = `
                     <tr>
@@ -1145,11 +1028,9 @@
                 `;
                 return;
             }
-
             reservasMostrar.forEach(reserva => {
                 const barbero = barberosData.find(b => b.id === reserva.barberoId) || { nombre: 'Desconocido' };
                 const servicio = serviciosData.find(s => s.id === reserva.servicio) || { nombre: 'Desconocido' };
-                
                 // Formatear la fecha y hora de la reserva
                 let fechaHoraFormateada = 'Fecha no disponible';
                 if (reserva.horarioId) {
@@ -1165,7 +1046,6 @@
                         });
                     }
                 }
-                
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td>${reserva.nombre}</td>
@@ -1188,7 +1068,6 @@
                 `;
                 reservasTable.appendChild(row);
             });
-
             // Agregar event listeners a los botones de ver detalle
             document.querySelectorAll('.ver-detalle').forEach(btn => {
                 btn.addEventListener('click', function() {
@@ -1197,14 +1076,12 @@
                 });
             });
         }
-
         // Mostrar detalle de reserva
         function mostrarDetalleReserva(id) {
             const reserva = reservasData.find(r => r.id === id);
             if (reserva) {
                 const barbero = barberosData.find(b => b.id === reserva.barberoId) || { nombre: 'Desconocido' };
                 const servicio = serviciosData.find(s => s.id === reserva.servicio) || { nombre: 'Desconocido' };
-                
                 // Formatear la fecha y hora de la reserva
                 let fechaHoraFormateada = 'Fecha no disponible';
                 if (reserva.horarioId) {
@@ -1220,7 +1097,6 @@
                         });
                     }
                 }
-                
                 // Mostrar datos en el modal
                 document.getElementById('detalleNombre').textContent = reserva.nombre;
                 document.getElementById('detalleCelular').textContent = reserva.celular;
@@ -1229,7 +1105,6 @@
                 document.getElementById('detalleFechaHora').textContent = fechaHoraFormateada;
                 document.getElementById('detalleEstado').textContent = getStatusText(reserva.estado);
                 document.getElementById('detalleEstado').className = `badge ${getStatusClass(reserva.estado)}`;
-                
                 // Mostrar acciones según el estado
                 const accionesReserva = document.getElementById('accionesReserva');
                 if (reserva.estado === 'pendiente') {
@@ -1242,14 +1117,12 @@
                         </button>
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
                     `;
-                    
                     // Agregar event listeners
                     document.querySelector('.confirmar-reserva').addEventListener('click', function() {
                         const id = this.dataset.id;
                         showActionModal('confirmado', id, '¿Confirmar esta reserva?');
                         detalleReservaModal.hide();
                     });
-                    
                     document.querySelector('.rechazar-reserva').addEventListener('click', function() {
                         const id = this.dataset.id;
                         showActionModal('rechazado', id, '¿Rechazar esta reserva? El horario quedará disponible nuevamente.');
@@ -1260,11 +1133,9 @@
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
                     `;
                 }
-                
                 detalleReservaModal.show();
             }
         }
-
         // Obtener clase CSS para estado
         function getStatusClass(status) {
             switch(status) {
@@ -1274,7 +1145,6 @@
                 default: return 'bg-secondary';
             }
         }
-
         // Obtener texto para estado
         function getStatusText(status) {
             switch(status) {
@@ -1284,7 +1154,6 @@
                 default: return status;
             }
         }
-
         // Formatear fecha y hora
         function formatDateTime(dateTime) {
             try {
@@ -1301,7 +1170,6 @@
                 return dateTime;
             }
         }
-
         // Mostrar modal de acción
         function showActionModal(action, id, message) {
             currentAction = action;
@@ -1309,7 +1177,6 @@
             actionMessage.textContent = message;
             actionModal.show();
         }
-
         // Confirmar acción
         confirmAction.addEventListener('click', async function() {
             if (currentAction && currentReservaId) {
@@ -1320,20 +1187,16 @@
                             // Actualizar reserva
                             await updateDoc(doc(db, 'reservas', currentReservaId), { estado: currentAction });
                             break;
-                            
                         case 'delete-barbero':
                             // Eliminar barbero
                             await deleteDoc(doc(db, 'barberos', currentReservaId));
                             break;
-                            
                         case 'delete-servicio':
                             // Eliminar servicio
                             await deleteDoc(doc(db, 'servicios', currentReservaId));
                             break;
                     }
-                    
                     actionModal.hide();
-                    
                     // Actualizar datos según la acción
                     switch(currentAction) {
                         case 'confirmado':
@@ -1344,11 +1207,9 @@
                             }
                             renderReservas();
                             break;
-                            
                         case 'delete-barbero':
                             await cargarBarberos();
                             break;
-                            
                         case 'delete-servicio':
                             await cargarServicios();
                             break;
@@ -1359,23 +1220,18 @@
                 }
             }
         });
-
         // Aplicar filtros
         applyFilters.addEventListener('click', function() {
             const statusFilter = filterStatus.value;
             const barberFilter = filterBarber.value;
             const dateFilter = filterDate.value;
-
             let reservasFiltradas = [...reservasData];
-
             if (statusFilter) {
                 reservasFiltradas = reservasFiltradas.filter(r => r.estado === statusFilter);
             }
-
             if (barberFilter) {
                 reservasFiltradas = reservasFiltradas.filter(r => r.barberoId === barberFilter);
             }
-
             if (dateFilter) {
                 reservasFiltradas = reservasFiltradas.filter(r => {
                     if (r.horarioId) {
@@ -1385,10 +1241,8 @@
                     return false;
                 });
             }
-
             renderReservas(reservasFiltradas);
         });
-
         // Disponibilidad - Mostrar/Ocultar campo de otro motivo
         document.getElementById('motivoBloqueo').addEventListener('change', function() {
             const otroMotivoContainer = document.getElementById('otroMotivoContainer');
@@ -1398,14 +1252,12 @@
                 otroMotivoContainer.style.display = 'none';
             }
         });
-
         // Disponibilidad - Cargar barberos para disponibilidad
         async function cargarBarberosParaDisponibilidad() {
             try {
                 const response = await fetch('/api/barberos');
                 if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                 const barberos = await response.json();
-                
                 const select = document.getElementById('barberoDisponibilidadSelect');
                 select.innerHTML = '<option value="">Selecciona un barbero</option>';
                 barberos.forEach(barbero => {
@@ -1418,7 +1270,6 @@
                 console.error('Error al cargar barberos para disponibilidad:', error);
             }
         }
-
         // Disponibilidad - Mostrar días bloqueados
         async function mostrarDiasBloqueados(barberoId) {
             if (!barberoId) {
@@ -1426,19 +1277,16 @@
                     '<div class="text-muted">Selecciona un barbero para ver días bloqueados</div>';
                 return;
             }
-            
             try {
                 // Obtener bloqueos del mes actual y próximo
                 const hoy = new Date();
                 const primerDiaMes = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-01`;
                 const proximoMes = new Date(hoy.getFullYear(), hoy.getMonth() + 2, 0);
                 const ultimoDiaMes = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(proximoMes.getDate()).padStart(2, '0')}`;
-                
                 const response = await fetch(`/api/bloqueos/${barberoId}?fechaInicio=${primerDiaMes}&fechaFin=${ultimoDiaMes}`);
                 if (response.ok) {
                     const bloqueos = await response.json();
                     bloqueosData = bloqueos;
-                    
                     const container = document.getElementById('diasBloqueadosContainer');
                     if (bloqueos.length === 0) {
                         container.innerHTML = '<div class="text-muted">No hay días bloqueados</div>';
@@ -1467,7 +1315,6 @@
                             `;
                         });
                         container.innerHTML = html;
-                        
                         // Agregar event listeners a los botones de desbloqueo
                         document.querySelectorAll('.desbloquear-btn').forEach(btn => {
                             btn.addEventListener('click', async function() {
@@ -1477,7 +1324,6 @@
                                         const response = await fetch(`/api/bloqueos/${id}`, {
                                             method: 'DELETE'
                                         });
-                                        
                                         if (response.ok) {
                                             // Recargar días bloqueados
                                             await mostrarDiasBloqueados(barberoId);
@@ -1506,7 +1352,6 @@
                     '<div class="text-danger">Error al cargar días bloqueados</div>';
             }
         }
-
         // Disponibilidad - Evento para seleccionar barbero en disponibilidad
         document.getElementById('barberoDisponibilidadSelect').addEventListener('change', async function() {
             selectedBarberoIdDisp = this.value;
@@ -1520,7 +1365,6 @@
                     '<div class="text-muted">Selecciona un barbero para ver días bloqueados</div>';
             }
         });
-
         // Disponibilidad - Navegación del calendario
         document.getElementById('prevMonthDisp').addEventListener('click', function() {
             currentMonthDisp--;
@@ -1530,7 +1374,6 @@
             }
             generarCalendarioDisp(currentMonthDisp, currentYearDisp);
         });
-
         document.getElementById('nextMonthDisp').addEventListener('click', function() {
             currentMonthDisp++;
             if (currentMonthDisp > 11) {
@@ -1539,31 +1382,25 @@
             }
             generarCalendarioDisp(currentMonthDisp, currentYearDisp);
         });
-
         // Disponibilidad - Generar calendario
         async function generarCalendarioDisp(month, year) {
             if (!selectedBarberoIdDisp) return;
-            
             const date = new Date(year, month, 1);
             const diasEnMes = new Date(year, month + 1, 0).getDate();
             const primerDiaSemana = date.getDay();
             const hoy = new Date();
             hoy.setHours(0, 0, 0, 0);
             const hoyStr = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
-            
             const mesNombres = [
                 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
                 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
             ];
-            
             document.getElementById('mesAnioActualDisp').textContent = `${mesNombres[month]} ${year}`;
-            
             // Obtener bloqueos del mes
             let bloqueos = [];
             if (selectedBarberoIdDisp) {
                 const primerDiaMes = `${year}-${String(month + 1).padStart(2, '0')}-01`;
                 const ultimoDiaMes = `${year}-${String(month + 1).padStart(2, '0')}-${String(diasEnMes).padStart(2, '0')}`;
-                
                 try {
                     const response = await fetch(`/api/bloqueos/${selectedBarberoIdDisp}?fechaInicio=${primerDiaMes}&fechaFin=${ultimoDiaMes}`);
                     if (response.ok) {
@@ -1575,14 +1412,11 @@
                     console.error('Error al obtener bloqueos:', error);
                 }
             }
-            
             let html = '';
             let dia = 1;
-            
             // Generar filas del calendario
             for (let i = 0; i < 6; i++) {
                 html += '<tr>';
-                
                 // Generar columnas (días de la semana)
                 for (let j = 0; j < 7; j++) {
                     if (i === 0 && j < primerDiaSemana) {
@@ -1595,32 +1429,25 @@
                         const fechaCompleta = `${year}-${String(month + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
                         const fechaObj = new Date(fechaCompleta);
                         fechaObj.setHours(0, 0, 0, 0);
-                        
                         const esFinDeSemana = (j === 0 || j === 6); // Domingo o Sábado
                         const esHoy = (fechaCompleta === hoyStr);
                         const esPasado = (fechaObj < hoy);
                         const tieneBloqueo = bloqueos.some(bloqueo => bloqueo.fecha === fechaCompleta);
-                        
                         let clases = '';
                         if (esHoy) clases += ' today';
                         if (tieneBloqueo) clases += ' bloqueado';
                         if (esFinDeSemana || esPasado) clases += ' disabled';
                         if (esPasado) clases += ' pasado';
                         if (selectedDateDisp === fechaCompleta) clases += ' selected';
-                        
                         html += `<td data-fecha="${fechaCompleta}" class="${clases}">${dia}</td>`;
                         dia++;
                     }
                 }
-                
                 html += '</tr>';
-                
                 // Si ya mostramos todos los días, salir del bucle
                 if (dia > diasEnMes) break;
             }
-            
             document.getElementById('calendarioBodyDisp').innerHTML = html;
-            
             // Agregar event listeners a los días
             document.querySelectorAll('#calendario td[data-fecha]').forEach(td => {
                 td.addEventListener('click', function() {
@@ -1628,47 +1455,38 @@
                     const esFinDeSemana = this.classList.contains('disabled');
                     const estaBloqueado = this.classList.contains('bloqueado');
                     const esPasado = this.classList.contains('pasado');
-                    
                     if (!esFinDeSemana && !estaBloqueado && !esPasado) {
                         // Remover clase selected de todos los días
                         document.querySelectorAll('#calendario td.selected').forEach(el => {
                             el.classList.remove('selected');
                         });
-                        
                         // Agregar clase selected al día seleccionado
                         this.classList.add('selected');
                         selectedDateDisp = fecha;
-                        
                         // Actualizar fecha de bloqueo
                         document.getElementById('fechaBloqueo').value = fecha;
                     }
                 });
             });
         }
-
         // Disponibilidad - Bloquear día (función mejorada)
         document.getElementById('bloquearDiaBtn').addEventListener('click', async function() {
             const fecha = document.getElementById('fechaBloqueo').value;
             const motivoSelect = document.getElementById('motivoBloqueo').value;
             const otroMotivo = document.getElementById('otroMotivo').value;
-            
             if (!selectedBarberoIdDisp) {
                 alert('Selecciona un barbero primero');
                 return;
             }
-            
             if (!fecha) {
                 alert('Selecciona una fecha');
                 return;
             }
-            
             const motivo = motivoSelect === 'otro' ? otroMotivo : motivoSelect;
-            
             if (motivoSelect === 'otro' && !otroMotivo.trim()) {
                 alert('Ingresa el motivo');
                 return;
             }
-            
             try {
                 const response = await fetch('/api/bloqueos', {
                     method: 'POST',
@@ -1681,7 +1499,6 @@
                         motivo: motivo
                     })
                 });
-                
                 if (response.ok) {
                     alert('Día bloqueado exitosamente');
                     document.getElementById('fechaBloqueo').value = '';
