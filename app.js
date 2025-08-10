@@ -35,6 +35,7 @@ const corsOptions = {
   origin: function (origin, callback) {
     // Permitir solicitudes sin origen (como mobile apps, curl) y ciertos dominios conocidos
     const allowedOrigins = [
+      'http://127.0.0.1:3000',
       'http://127.0.0.1:5500',        // Live Server por defecto
       'http://localhost:5500',        // Otro puerto común de Live Server
       'http://127.0.0.1:5501',        // Otro puerto de Live Server
