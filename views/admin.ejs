@@ -6,6 +6,7 @@
     <title>Panel de Administración - Barbería</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
             --primary: #2c3e50;
@@ -166,6 +167,21 @@
             font-size: 0.9em;
             color: #6c757d;
         }
+        /* Estadísticas */
+        .stat-card {
+            border-left: 4px solid var(--accent);
+            transition: transform 0.3s;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        .chart-container {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
         /* Mobile optimizations */
         @media (max-width: 992px) {
             .sidebar {
@@ -319,6 +335,11 @@
                             <li class="nav-item">
                                 <a class="nav-link text-white" href="#" data-tab="disponibilidad">
                                     <i class="bi bi-calendar-x me-2"></i>Disponibilidad
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-white" href="#" data-tab="estadisticas">
+                                    <i class="bi bi-bar-chart me-2"></i>Estadísticas
                                 </a>
                             </li>
                         </ul>
@@ -508,6 +529,80 @@
                             </div>
                         </div>
                     </div>
+                    <!-- Estadísticas Tab -->
+                    <div class="tab-content d-none" id="estadisticas-tab">
+                        <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                            <h1 class="h2">Estadísticas</h1>
+                        </div>
+                        <!-- Resumen estadísticas -->
+                        <div class="row mb-4">
+                            <div class="col-md-3 col-sm-6 mb-3">
+                                <div class="card stat-card">
+                                    <div class="card-body">
+                                        <h5 class="card-title">Total Reservas</h5>
+                                        <h2 id="totalReservas" class="text-primary">0</h2>
+                                        <p class="text-muted">Todas las reservas</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 col-sm-6 mb-3">
+                                <div class="card stat-card">
+                                    <div class="card-body">
+                                        <h5 class="card-title">Reservas Confirmadas</h5>
+                                        <h2 id="reservasConfirmadas" class="text-success">0</h2>
+                                        <p class="text-muted">Reservas aceptadas</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 col-sm-6 mb-3">
+                                <div class="card stat-card">
+                                    <div class="card-body">
+                                        <h5 class="card-title">Reservas Pendientes</h5>
+                                        <h2 id="reservasPendientes" class="text-warning">0</h2>
+                                        <p class="text-muted">Reservas por confirmar</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 col-sm-6 mb-3">
+                                <div class="card stat-card">
+                                    <div class="card-body">
+                                        <h5 class="card-title">Reservas Rechazadas</h5>
+                                        <h2 id="reservasRechazadas" class="text-danger">0</h2>
+                                        <p class="text-muted">Reservas canceladas</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Gráficos -->
+                        <div class="row">
+                            <div class="col-md-6 mb-4">
+                                <div class="chart-container">
+                                    <h5 class="mb-3">Reservas por Estado</h5>
+                                    <canvas id="reservasEstadoChart"></canvas>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-4">
+                                <div class="chart-container">
+                                    <h5 class="mb-3">Reservas por Barbero</h5>
+                                    <canvas id="reservasBarberoChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-4">
+                                <div class="chart-container">
+                                    <h5 class="mb-3">Reservas por Servicio</h5>
+                                    <canvas id="reservasServicioChart"></canvas>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-4">
+                                <div class="chart-container">
+                                    <h5 class="mb-3">Reservas por Día de la Semana</h5>
+                                    <canvas id="reservasDiaChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </main>
             </div>
         </div>
@@ -658,6 +753,11 @@
         let selectedBarberoIdDisp = '';
         let selectedDateDisp = null;
         let bloqueosData = [];
+        // Gráficos
+        let reservasEstadoChart = null;
+        let reservasBarberoChart = null;
+        let reservasServicioChart = null;
+        let reservasDiaChart = null;
         // Elementos del DOM
         const loginSection = document.getElementById('loginSection');
         const adminPanel = document.getElementById('adminPanel');
@@ -777,6 +877,9 @@
                     case 'disponibilidad':
                         cargarBarberosParaDisponibilidad();
                         generarCalendarioDisp(currentMonthDisp, currentYearDisp);
+                        break;
+                    case 'estadisticas':
+                        cargarEstadisticas();
                         break;
                 }
             });
@@ -1518,6 +1621,230 @@
                 alert('Error de conexión al bloquear día. Por favor verifica tu conexión.');
             }
         });
+        // Estadísticas - Cargar y mostrar estadísticas
+        async function cargarEstadisticas() {
+            try {
+                // Cargar datos si no están disponibles
+                if (reservasData.length === 0) await cargarReservas();
+                if (barberosData.length === 0) await cargarBarberos();
+                if (serviciosData.length === 0) await cargarServicios();
+                
+                // Calcular estadísticas básicas
+                const totalReservas = reservasData.length;
+                const confirmadas = reservasData.filter(r => r.estado === 'confirmado').length;
+                const pendientes = reservasData.filter(r => r.estado === 'pendiente').length;
+                const rechazadas = reservasData.filter(r => r.estado === 'rechazado').length;
+                
+                // Actualizar resumen
+                document.getElementById('totalReservas').textContent = totalReservas;
+                document.getElementById('reservasConfirmadas').textContent = confirmadas;
+                document.getElementById('reservasPendientes').textContent = pendientes;
+                document.getElementById('reservasRechazadas').textContent = rechazadas;
+                
+                // Crear gráficos
+                crearGraficoEstado();
+                crearGraficoBarbero();
+                crearGraficoServicio();
+                crearGraficoDia();
+            } catch (error) {
+                console.error('Error al cargar estadísticas:', error);
+            }
+        }
+        // Crear gráfico de reservas por estado
+        function crearGraficoEstado() {
+            const ctx = document.getElementById('reservasEstadoChart').getContext('2d');
+            
+            // Destruir gráfico existente si hay uno
+            if (reservasEstadoChart) {
+                reservasEstadoChart.destroy();
+            }
+            
+            const estados = ['confirmado', 'pendiente', 'rechazado'];
+            const conteos = [
+                reservasData.filter(r => r.estado === 'confirmado').length,
+                reservasData.filter(r => r.estado === 'pendiente').length,
+                reservasData.filter(r => r.estado === 'rechazado').length
+            ];
+            
+            reservasEstadoChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Confirmadas', 'Pendientes', 'Rechazadas'],
+                    datasets: [{
+                        data: conteos,
+                        backgroundColor: [
+                            '#28a745', // Verde para confirmadas
+                            '#ffc107', // Amarillo para pendientes
+                            '#dc3545'  // Rojo para rechazadas
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = Math.round((context.raw / total) * 100);
+                                    return `${context.label}: ${context.raw} (${percentage}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        // Crear gráfico de reservas por barbero
+        function crearGraficoBarbero() {
+            const ctx = document.getElementById('reservasBarberoChart').getContext('2d');
+            
+            // Destruir gráfico existente si hay uno
+            if (reservasBarberoChart) {
+                reservasBarberoChart.destroy();
+            }
+            
+            // Agrupar reservas por barbero
+            const reservasPorBarbero = {};
+            reservasData.forEach(reserva => {
+                const barbero = barberosData.find(b => b.id === reserva.barberoId);
+                const nombreBarbero = barbero ? barbero.nombre : 'Desconocido';
+                reservasPorBarbero[nombreBarbero] = (reservasPorBarbero[nombreBarbero] || 0) + 1;
+            });
+            
+            const nombres = Object.keys(reservasPorBarbero);
+            const conteos = Object.values(reservasPorBarbero);
+            
+            reservasBarberoChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: nombres,
+                    datasets: [{
+                        label: 'Reservas',
+                        data: conteos,
+                        backgroundColor: 'rgba(52, 152, 219, 0.7)',
+                        borderColor: 'rgba(52, 152, 219, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        }
+        // Crear gráfico de reservas por servicio
+        function crearGraficoServicio() {
+            const ctx = document.getElementById('reservasServicioChart').getContext('2d');
+            
+            // Destruir gráfico existente si hay uno
+            if (reservasServicioChart) {
+                reservasServicioChart.destroy();
+            }
+            
+            // Agrupar reservas por servicio
+            const reservasPorServicio = {};
+            reservasData.forEach(reserva => {
+                const servicio = serviciosData.find(s => s.id === reserva.servicio);
+                const nombreServicio = servicio ? servicio.nombre : 'Desconocido';
+                reservasPorServicio[nombreServicio] = (reservasPorServicio[nombreServicio] || 0) + 1;
+            });
+            
+            const nombres = Object.keys(reservasPorServicio);
+            const conteos = Object.values(reservasPorServicio);
+            
+            reservasServicioChart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: nombres,
+                    datasets: [{
+                        data: conteos,
+                        backgroundColor: [
+                            '#e74c3c', // Rojo
+                            '#3498db', // Azul
+                            '#2ecc71', // Verde
+                            '#f39c12', // Naranja
+                            '#9b59b6', // Púrpura
+                            '#1abc9c'  // Turquesa
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                        }
+                    }
+                }
+            });
+        }
+        // Crear gráfico de reservas por día de la semana
+        function crearGraficoDia() {
+            const ctx = document.getElementById('reservasDiaChart').getContext('2d');
+            
+            // Destruir gráfico existente si hay uno
+            if (reservasDiaChart) {
+                reservasDiaChart.destroy();
+            }
+            
+            // Agrupar reservas por día de la semana
+            const diasSemana = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+            const reservasPorDia = Array(7).fill(0);
+            
+            reservasData.forEach(reserva => {
+                if (reserva.horarioId) {
+                    const fecha = new Date(reserva.horarioId);
+                    if (!isNaN(fecha.getTime())) {
+                        const dia = fecha.getDay(); // 0 = Domingo, 6 = Sábado
+                        reservasPorDia[dia]++;
+                    }
+                }
+            });
+            
+            reservasDiaChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: diasSemana,
+                    datasets: [{
+                        label: 'Reservas',
+                        data: reservasPorDia,
+                        borderColor: 'rgba(231, 76, 60, 1)',
+                        backgroundColor: 'rgba(231, 76, 60, 0.2)',
+                        tension: 0.1,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
+                    }
+                }
+            });
+        }
     </script>
 </body>
 </html>
