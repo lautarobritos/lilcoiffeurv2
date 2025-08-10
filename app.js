@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const path = require('path');
+const cors = require('cors'); // 1. Importar el paquete cors
 const { initializeApp } = require('firebase/app');
 const { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, where, orderBy, setDoc } = require('firebase/firestore');
 
@@ -29,6 +30,33 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// 2. Configuración de CORS
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Permitir solicitudes sin origen (como mobile apps, curl) y ciertos dominios conocidos
+    const allowedOrigins = [
+      'http://127.0.0.1:5500',        // Live Server por defecto
+      'http://localhost:5500',        // Otro puerto común de Live Server
+      'http://127.0.0.1:5501',        // Otro puerto de Live Server
+      'http://localhost:5501',        // Otro puerto de Live Server
+      'http://localhost:3000',        // Si corres el frontend de React en desarrollo
+      'https://lilcoiffeurv2-production.up.railway.app', // Tu backend en Railway
+      // Puedes agregar aquí otros dominios desde los que sirvas tu frontend en producción
+      // Ejemplo: 'https://tu-dominio-personalizado.com'
+    ];
+    // Si no hay origen (peticiones directas) o el origen está en la lista permitida
+    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('No permitido por CORS'));
+    }
+  },
+  credentials: true, // Habilitar si necesitas enviar cookies o headers de autenticación
+  optionsSuccessStatus: 200
+};
+
+app.use(cors(corsOptions)); // 3. Usar el middleware cors con las opciones definidas
+
 // Rutas
 
 // Página principal
@@ -52,6 +80,8 @@ app.get('/admin', async (req, res) => {
         res.status(500).send('Error al cargar el panel de administración');
     }
 });
+
+// --- API Routes ---
 
 // API: Obtener barberos
 app.get('/api/barberos', async (req, res) => {
@@ -207,21 +237,29 @@ app.post('/api/reservas', async (req, res) => {
         // Verificar si el documento de horario existe, si no, crearlo
         const horarioDocRef = doc(db, 'horarios', horarioId);
         try {
-            // Intentar obtener el documento
-            await getDocs(horarioDocRef);
-            // Si existe, actualizarlo
+            // Intentar obtener el documento para ver si existe
+            // getDocs espera una Query, docRef es un DocumentReference
+            // Para verificar existencia, podemos intentar get() o manejar el error como abajo
+            // O usar getDoc(docRef) de 'firebase/firestore'
+            // Vamos a usar updateDoc y capturar el error si no existe
             await updateDoc(horarioDocRef, {
                 estado: 'ocupado',
                 reservaId: reservaRef.id
             });
         } catch (error) {
             // Si no existe, crearlo
-            await setDoc(horarioDocRef, {
-                barberoId: barberoId,
-                fechaHora: horarioId,
-                estado: 'ocupado',
-                reservaId: reservaRef.id
-            });
+            if (error.code === 'not-found' || error.code === 13 /* PERMISSION_DENIED podría indicar no existe si las reglas son estrictas */) {
+                 await setDoc(horarioDocRef, {
+                    barberoId: barberoId,
+                    fechaHora: horarioId,
+                    estado: 'ocupado',
+                    reservaId: reservaRef.id
+                });
+            } else {
+                 // Si es otro error, relanzarlo
+                 throw error;
+            }
+           
         }
         
         res.status(201).json({ id: reservaRef.id, ...reserva });
@@ -263,34 +301,38 @@ app.put('/api/reservas/:id', async (req, res) => {
         // Si se rechaza, liberar el horario
         if (estado === 'rechazado') {
             try {
-                const reservaDocRef = doc(db, 'reservas', reservaId);
-                const reservaDoc = await getDocs(reservaDocRef);
-                if (reservaDoc.exists()) {
-                    const reserva = reservaDoc.data();
-                    if (reserva.horarioId) {
-                        const horarioDocRef = doc(db, 'horarios', reserva.horarioId);
+                // Obtener la reserva para conocer el horarioId
+                const reservaDocSnap = await getDocs(doc(db, 'reservas', reservaId));
+                if (reservaDocSnap.exists()) {
+                    const reservaData = reservaDocSnap.data();
+                    if (reservaData.horarioId) {
+                        const horarioDocRef = doc(db, 'horarios', reservaData.horarioId);
                         try {
-                            // Verificar si el documento existe
-                            await getDocs(horarioDocRef);
-                            // Si existe, actualizarlo
-                            await updateDoc(horarioDocRef, {
+                            // Intentar actualizar el horario
+                             await updateDoc(horarioDocRef, {
                                 estado: 'disponible',
                                 reservaId: null
                             });
                         } catch (horarioError) {
-                            // Si no existe, crearlo como disponible
-                            await setDoc(horarioDocRef, {
-                                barberoId: reserva.barberoId,
-                                fechaHora: reserva.horarioId,
-                                estado: 'disponible',
-                                reservaId: null
-                            });
+                            // Si el documento de horario no existe, crearlo como disponible
+                            // (Esto podría pasar si se creó manualmente la reserva o hubo un error previo)
+                            if (horarioError.code === 'not-found' || horarioError.code === 13) {
+                                await setDoc(horarioDocRef, {
+                                    barberoId: reservaData.barberoId,
+                                    fechaHora: reservaData.horarioId,
+                                    estado: 'disponible',
+                                    reservaId: null
+                                });
+                            } else {
+                                // Relanzar si es otro error
+                                throw horarioError;
+                            }
                         }
                     }
                 }
             } catch (horarioError) {
-                console.error('Error al actualizar horario:', horarioError);
-                // No detener la operación principal por error en horario
+                console.error('Error al actualizar/liberar horario:', horarioError);
+                // No detener la operación principal por error en horario, pero se registra
             }
         }
         
