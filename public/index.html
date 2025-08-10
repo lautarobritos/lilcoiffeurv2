@@ -2,21 +2,25 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Barbería Profesional</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Barbería - Agenda Online</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <style>
         :root {
             --primary: #2c3e50;
-            --dark: #34495e;
+            --secondary: #3498db;
             --accent: #e67e22;
+            --light: #ecf0f1;
+            --dark: #34495e;
         }
+        
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: #f8f9fa;
             padding-bottom: 60px;
         }
+        
         .navbar {
             background: linear-gradient(135deg, var(--primary), var(--dark));
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
@@ -24,26 +28,31 @@
             top: 0;
             z-index: 1000;
         }
+        
         .hero-section {
             background: linear-gradient(rgba(44, 62, 80, 0.9), rgba(52, 73, 94, 0.9)), url('https://placehold.co/1200x600/2c3e50/ffffff?text=Barbería+Profesional') center/cover;
             color: white;
             padding: 100px 0;
             text-align: center;
         }
+        
         .carousel-item {
             height: 500px;
         }
+        
         .carousel-item img {
             object-fit: cover;
             height: 100%;
             width: 100%;
         }
+        
         .section-title {
             color: var(--primary);
             position: relative;
             padding-bottom: 15px;
             margin-bottom: 30px;
         }
+        
         .section-title:after {
             content: '';
             position: absolute;
@@ -54,34 +63,42 @@
             height: 3px;
             background: var(--accent);
         }
+        
         .service-card {
             transition: transform 0.3s;
             border: none;
             box-shadow: 0 5px 15px rgba(0,0,0,0.1);
         }
+        
         .service-card:hover {
             transform: translateY(-10px);
         }
+        
         .barber-card {
             border: none;
             box-shadow: 0 5px 15px rgba(0,0,0,0.1);
             transition: all 0.3s;
         }
+        
         .barber-card:hover {
             box-shadow: 0 8px 25px rgba(0,0,0,0.15);
         }
+        
         .availability-slot {
             cursor: pointer;
             transition: all 0.2s;
         }
+        
         .availability-slot:hover {
             transform: scale(1.05);
         }
+        
         .availability-slot.selected {
             background-color: var(--accent);
             color: white;
             border-color: var(--accent);
         }
+        
         .availability-slot.reservado {
             background-color: #f8d7da;
             color: #721c24;
@@ -89,95 +106,139 @@
             cursor: not-allowed;
             opacity: 0.6;
         }
+        
         .availability-slot.reservado:hover {
             background-color: #f8d7da;
             transform: none;
         }
+        
         .btn-primary {
             background-color: var(--accent);
             border-color: var(--accent);
         }
+        
         .btn-primary:hover {
             background-color: #d35400;
             border-color: #d35400;
         }
+        
         footer {
             background: linear-gradient(135deg, var(--primary), var(--dark));
             color: white;
             padding: 30px 0;
         }
+        
         /* Calendario mejorado */
         #calendario {
             background: white;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             padding: 20px;
-            margin-top: 20px;
+            margin-bottom: 20px;
         }
+        
         .calendario-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 15px;
+            margin-bottom: 20px;
+            padding: 0 10px;
         }
+        
         .calendario-header button {
             background: var(--primary);
             color: white;
             border: none;
-            width: 36px;
-            height: 36px;
             border-radius: 50%;
+            width: 35px;
+            height: 35px;
             cursor: pointer;
-            font-weight: bold;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
         }
+        
+        .calendario-header button:hover {
+            background: var(--dark);
+        }
+        
         .calendario-header span {
             font-size: 18px;
-            font-weight: 600;
+            font-weight: bold;
+            color: var(--primary);
+            text-align: center;
+            flex-grow: 1;
         }
+        
         #calendario table {
             width: 100%;
             border-collapse: collapse;
         }
+        
         #calendario th {
-            padding: 10px;
+            padding: 12px 8px;
             text-align: center;
-            background-color: var(--primary);
-            color: white;
+            font-weight: bold;
+            color: var(--primary);
+            border-bottom: 2px solid #eee;
         }
+        
         #calendario td {
-            padding: 12px;
+            padding: 12px 8px;
             text-align: center;
             cursor: pointer;
-            border: 1px solid #eee;
+            border-radius: 50%;
+            width: 14.28%;
+            height: 40px;
             transition: all 0.2s;
         }
-        #calendario td:hover:not(.disabled):not(.empty):not(.bloqueado):not(.pasado) {
+        
+        #calendario td:hover:not(.disabled):not(.empty) {
             background-color: #e3f2fd;
             transform: scale(1.1);
         }
+        
         #calendario td.selected {
             background-color: var(--accent);
             color: white;
             font-weight: bold;
         }
+        
+        #calendario td.today {
+            background-color: #2196f3;
+            color: white;
+            font-weight: bold;
+        }
+        
         #calendario td.disabled {
             color: #ccc;
             cursor: not-allowed;
+            background-color: #f5f5f5;
         }
+        
+        #calendario td.empty {
+            cursor: default;
+        }
+        
         #calendario td.bloqueado {
             background-color: #ffcdd2;
             color: #c62828;
             text-decoration: line-through;
         }
+        
         #calendario td.bloqueado:hover {
             background-color: #ffcdd2;
             transform: none;
         }
+        
         #calendario td.pasado {
             background-color: #e9ecef;
             color: #6c757d;
             cursor: not-allowed;
         }
+        
         /* Horarios disponibles */
         .horarios-container {
             display: grid;
@@ -185,23 +246,29 @@
             gap: 10px;
             margin-top: 20px;
         }
+        
         .horario-btn {
-            padding: 10px 5px;
-            background-color: #e9ecef;
-            border: 1px solid #ced4da;
-            border-radius: 5px;
-            text-align: center;
+            padding: 12px 8px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: white;
             cursor: pointer;
             transition: all 0.2s;
+            text-align: center;
+            font-weight: 500;
         }
-        .horario-btn:hover:not(.reservado) {
-            background-color: #dee2e6;
+        
+        .horario-btn:hover {
+            background-color: #e3f2fd;
+            transform: translateY(-2px);
         }
+        
         .horario-btn.selected {
             background-color: var(--accent);
             color: white;
             border-color: var(--accent);
         }
+        
         .horario-btn.reservado {
             background-color: #f8d7da;
             color: #721c24;
@@ -209,10 +276,18 @@
             cursor: not-allowed;
             opacity: 0.6;
         }
+        
         .horario-btn.reservado:hover {
             background-color: #f8d7da;
             transform: none;
         }
+        
+        .horario-btn.disabled {
+            background-color: #f5f5f5;
+            color: #ccc;
+            cursor: not-allowed;
+        }
+        
         /* Loading spinner */
         .spinner-container {
             display: flex;
@@ -220,42 +295,108 @@
             align-items: center;
             padding: 20px;
         }
+        
         /* Mobile optimizations */
         @media (max-width: 768px) {
             .hero-section {
                 padding: 60px 0 30px 0;
             }
+            
             .carousel-item {
                 height: 200px;
             }
+            
             .section-title {
                 font-size: 1.5rem;
                 margin-bottom: 20px;
             }
+            
             .form-control, .form-select {
                 font-size: 16px; /* Previene el zoom en iOS */
             }
+            
             .table-responsive {
                 font-size: 0.85rem;
             }
+            
             .table th, .table td {
                 padding: 0.5rem;
             }
+            
             #calendario td {
                 padding: 8px 4px;
                 height: 35px;
                 font-size: 14px;
             }
+            
             .calendario-header button {
                 width: 32px;
                 height: 32px;
+                font-size: 14px;
             }
+            
+            .calendario-header span {
+                font-size: 16px;
+            }
+            
+            .card {
+                margin-bottom: 15px;
+            }
+            
+            .btn {
+                padding: 8px 12px;
+                font-size: 14px;
+            }
+            
+            .btn-sm {
+                padding: 6px 10px;
+                font-size: 13px;
+            }
+            
+            .horarios-container {
+                grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+                gap: 8px;
+            }
+            
+            .horario-btn {
+                padding: 10px 6px;
+                font-size: 13px;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .table-responsive {
+                font-size: 0.75rem;
+            }
+            
+            .table th, .table td {
+                padding: 0.3rem;
+            }
+            
+            .carousel-item {
+                height: 180px;
+            }
+            
+            #calendario td {
+                padding: 6px 2px;
+                height: 30px;
+                font-size: 12px;
+            }
+            
+            .calendario-header button {
+                width: 28px;
+                height: 28px;
+                font-size: 12px;
+            }
+            
             .calendario-header span {
                 font-size: 14px;
             }
+            
             .horarios-container {
                 grid-template-columns: repeat(4, 1fr);
             }
+            
             .horario-btn {
                 padding: 8px 4px;
                 font-size: 12px;
@@ -267,7 +408,9 @@
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark">
         <div class="container">
-            <a class="navbar-brand" href="#"><i class="bi bi-scissors me-2"></i>Barbería Profesional</a>
+            <a class="navbar-brand" href="#">
+                <i class="bi bi-scissors me-2"></i>Barbería Profesional
+            </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
@@ -289,6 +432,7 @@
             </div>
         </div>
     </nav>
+
     <!-- Hero Section con Carrusel -->
     <section class="hero-section">
         <div class="container">
@@ -297,7 +441,7 @@
             <a href="#booking" class="btn btn-primary btn-lg mt-3">Reservar Ahora</a>
         </div>
     </section>
-    <!-- Carrusel de Imágenes -->
+
     <div id="carouselExampleIndicators" class="carousel slide" data-bs-ride="carousel">
         <div class="carousel-indicators">
             <button type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide-to="0" class="active"></button>
@@ -306,13 +450,13 @@
         </div>
         <div class="carousel-inner">
             <div class="carousel-item active">
-                <img src="https://placehold.co/1200x500/3498db/ffffff?text=Corte+Clásico" class="d-block w-100" alt="Corte Clásico">
+                <img src="https://placehold.co/1200x500/3498db/ffffff?text=Salón+de+Barbería" class="d-block w-100" alt="Salón">
             </div>
             <div class="carousel-item">
-                <img src="https://placehold.co/1200x500/e74c3c/ffffff?text=Barba+Perfecta" class="d-block w-100" alt="Barba Perfecta">
+                <img src="https://placehold.co/1200x500/e67e22/ffffff?text=Cortes+Profesionales" class="d-block w-100" alt="Cortes">
             </div>
             <div class="carousel-item">
-                <img src="https://placehold.co/1200x500/2ecc71/ffffff?text=Afeitado+Tradicional" class="d-block w-100" alt="Afeitado Tradicional">
+                <img src="https://placehold.co/1200x500/2c3e50/ffffff?text=Equipo+Experto" class="d-block w-100" alt="Equipo">
             </div>
         </div>
         <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide="prev">
@@ -322,6 +466,7 @@
             <span class="carousel-control-next-icon"></span>
         </button>
     </div>
+
     <!-- Servicios -->
     <section id="services" class="py-5">
         <div class="container">
@@ -331,80 +476,97 @@
             </div>
         </div>
     </section>
+
     <!-- Formulario de Reserva -->
     <section id="booking" class="py-5 bg-light">
         <div class="container">
             <h2 class="section-title text-center">Reserva tu Cita</h2>
-            <form id="reservaForm">
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label for="nombre" class="form-label">Nombre Completo</label>
-                        <input type="text" class="form-control" id="nombre" required>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label for="celular" class="form-label">Celular</label>
-                        <input type="tel" class="form-control" id="celular" required>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label for="servicio" class="form-label">Servicio</label>
-                        <select class="form-select" id="servicio" required>
-                            <option value="">Selecciona un servicio</option>
-                        </select>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label for="barbero" class="form-label">Barbero</label>
-                        <select class="form-select" id="barbero" required>
-                            <option value="">Selecciona un barbero</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">Selecciona una Fecha</label>
-                        <div id="calendario">
-                            <div class="calendario-header">
-                                <button id="prevMonth">«</button>
-                                <span id="mesAnioActual">Agosto 2024</span>
-                                <button id="nextMonth">»</button>
-                            </div>
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th>Dom</th>
-                                        <th>Lun</th>
-                                        <th>Mar</th>
-                                        <th>Mié</th>
-                                        <th>Jue</th>
-                                        <th>Vie</th>
-                                        <th>Sáb</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="calendarioBody">
-                                    <!-- Calendario se generará aquí -->
-                                </tbody>
-                            </table>
+            <div class="row justify-content-center">
+                <div class="col-lg-10">
+                    <div class="card shadow">
+                        <div class="card-body">
+                            <form id="bookingForm">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="nombre" class="form-label">Nombre Completo</label>
+                                        <input type="text" class="form-control" id="nombre" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="celular" class="form-label">Celular</label>
+                                        <input type="tel" class="form-control" id="celular" required>
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="servicio" class="form-label">Servicio</label>
+                                        <select class="form-select" id="servicio" required>
+                                            <option value="">Selecciona un servicio</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="col-md-6 mb-3">
+                                        <label for="barbero" class="form-label">Barbero</label>
+                                        <select class="form-select" id="barbero" required>
+                                            <option value="">Selecciona un barbero</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Selecciona una Fecha</label>
+                                        <div id="calendario">
+                                            <div class="calendario-header">
+                                                <button id="prevMonth">«</button>
+                                                <span id="mesAnioActual">Agosto 2024</span>
+                                                <button id="nextMonth">»</button>
+                                            </div>
+                                            <table>
+                                                <thead>
+                                                    <tr>
+                                                        <th>Dom</th>
+                                                        <th>Lun</th>
+                                                        <th>Mar</th>
+                                                        <th>Mié</th>
+                                                        <th>Jue</th>
+                                                        <th>Vie</th>
+                                                        <th>Sáb</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="calendarioBody">
+                                                    <!-- El calendario se generará aquí -->
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Horarios Disponibles</label>
+                                        <div id="horariosContainer" class="horarios-container">
+                                            <div class="alert alert-info w-100">Selecciona una fecha para ver horarios disponibles</div>
+                                        </div>
+                                        <input type="hidden" id="fechaSeleccionada">
+                                        <input type="hidden" id="horarioId">
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="fechaHoraSeleccionada" class="form-label">Fecha y Hora Seleccionada</label>
+                                    <input type="text" class="form-control" id="fechaHoraSeleccionada" readonly>
+                                </div>
+                                
+                                <button type="submit" class="btn btn-primary w-100" id="submitBtn" disabled>
+                                    <i class="bi bi-calendar-check me-2"></i>Confirmar Reserva
+                                </button>
+                            </form>
                         </div>
-                        <input type="hidden" id="fechaSeleccionada">
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">Horarios Disponibles</label>
-                        <div id="horariosContainer">
-                            <div class="alert alert-info w-100">Selecciona un barbero y una fecha para ver horarios disponibles</div>
-                        </div>
-                        <input type="hidden" id="horarioId">
-                        <input type="hidden" id="fechaHoraSeleccionada">
                     </div>
                 </div>
-                <div class="text-center">
-                    <button type="submit" class="btn btn-primary btn-lg" id="submitBtn" disabled>
-                        <i class="bi bi-calendar-check me-2"></i>Confirmar Reserva
-                    </button>
-                </div>
-            </form>
+            </div>
         </div>
     </section>
+
     <!-- Barberos -->
     <section class="py-5">
         <div class="container">
@@ -414,6 +576,7 @@
             </div>
         </div>
     </section>
+
     <!-- Footer -->
     <footer class="text-center">
         <div class="container">
@@ -437,6 +600,7 @@
             <p>&copy; 2023 Barbería Profesional. Todos los derechos reservados.</p>
         </div>
     </footer>
+
     <!-- Modal de Confirmación -->
     <div class="modal fade" id="confirmationModal" tabindex="-1">
         <div class="modal-dialog">
@@ -450,12 +614,13 @@
                         <i class="bi bi-check-circle-fill text-success" style="font-size: 3rem;"></i>
                     </div>
                     <p class="text-center">¡Tu reserva ha sido confirmada exitosamente!</p>
-                    <div class="alert alert-info">
-                        <strong>Detalles de tu reserva:</strong>
-                        <ul class="mb-0" id="detalleReserva">
-                            <!-- Detalles se insertarán aquí -->
-                        </ul>
-                    </div>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item"><strong>Nombre:</strong> <span id="modalNombre"></span></li>
+                        <li class="list-group-item"><strong>Celular:</strong> <span id="modalCelular"></span></li>
+                        <li class="list-group-item"><strong>Servicio:</strong> <span id="modalServicio"></span></li>
+                        <li class="list-group-item"><strong>Barbero:</strong> <span id="modalBarbero"></span></li>
+                        <li class="list-group-item"><strong>Fecha y Hora:</strong> <span id="modalFechaHora"></span></li>
+                    </ul>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Aceptar</button>
@@ -463,32 +628,23 @@
             </div>
         </div>
     </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         // Variables globales
-        let selectedBarberoId = null;
-        let selectedDate = null;
-        let selectedHorarioId = null;
-        let serviciosData = [];
         let barberosData = [];
+        let serviciosData = [];
+        let horariosDisponibles = [];
+        let horariosReservados = []; // Nueva variable para horarios reservados
         let currentMonth = new Date().getMonth();
         let currentYear = new Date().getFullYear();
-        const API_BASE_URL = 'https://lilcoiffeurv2-production.up.railway.app'; // URL corregida sin espacios
+        let selectedDate = null;
+        let selectedBarberoId = null;
+        const API_BASE_URL = 'https://lilcoiffeurv2-production.up.railway.app';
 
-        // DOM Elements
-        const reservaForm = document.getElementById('reservaForm');
-        const calendarioBody = document.getElementById('calendarioBody');
-        const mesAnioActual = document.getElementById('mesAnioActual');
-        const prevMonthBtn = document.getElementById('prevMonth');
-        const nextMonthBtn = document.getElementById('nextMonth');
-
-        // Cargar datos iniciales
-        document.addEventListener('DOMContentLoaded', async function() {
-            await cargarServicios();
-            await cargarBarberos();
-            await cargarBarberosSeccion();
-            generarCalendario(currentMonth, currentYear);
-        });
+        // Establecer fecha mínima (hoy)
+        const hoy = new Date();
+        const hoyStr = hoy.toISOString().split('T')[0];
 
         // Cargar servicios
         async function cargarServicios() {
@@ -496,6 +652,7 @@
                 const response = await fetch(`${API_BASE_URL}/api/servicios`);
                 if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                 serviciosData = await response.json();
+                
                 const servicioSelect = document.getElementById('servicio');
                 servicioSelect.innerHTML = '<option value="">Selecciona un servicio</option>';
                 serviciosData.forEach(servicio => {
@@ -515,6 +672,7 @@
                 const response = await fetch(`${API_BASE_URL}/api/barberos`);
                 if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                 barberosData = await response.json();
+                
                 const barberoSelect = document.getElementById('barbero');
                 barberoSelect.innerHTML = '<option value="">Selecciona un barbero</option>';
                 barberosData.forEach(barbero => {
@@ -534,18 +692,22 @@
                 const response = await fetch(`${API_BASE_URL}/api/barberos`);
                 if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                 const barberos = await response.json();
+                
                 const container = document.getElementById('barberosContainer');
                 container.innerHTML = '';
+                
                 barberos.forEach(barbero => {
                     const col = document.createElement('div');
                     col.className = 'col-md-4 mb-4';
                     col.innerHTML = `
                         <div class="card barber-card text-center">
-                            <img src="https://placehold.co/300x300/3498db/ffffff?text=${barbero.nombre}" class="card-img-top" alt="${barbero.nombre}">
+                            <img src="${barbero.imagen || 'https://placehold.co/300x300/3498db/ffffff?text=' + encodeURIComponent(barbero.nombre)}" 
+                                 class="card-img-top rounded-circle mx-auto mt-3" 
+                                 style="width: 150px; height: 150px; object-fit: cover;" 
+                                 alt="${barbero.nombre}">
                             <div class="card-body">
                                 <h5 class="card-title">${barbero.nombre}</h5>
-                                <p class="card-text">${barbero.especialidad || 'Especialista'}</p>
-                                <p class="card-text"><small class="text-muted">${barbero.experiencia || 'Experiencia profesional'}</small></p>
+                                <p class="card-text">${barbero.descripcion || 'Barbero profesional'}</p>
                             </div>
                         </div>
                     `;
@@ -556,6 +718,37 @@
             }
         }
 
+        // Cargar servicios para la sección
+        async function cargarServiciosSeccion() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/servicios`);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                const servicios = await response.json();
+                
+                const container = document.getElementById('serviciosContainer');
+                container.innerHTML = '';
+                
+                servicios.forEach(servicio => {
+                    const col = document.createElement('div');
+                    col.className = 'col-md-4 mb-4';
+                    col.innerHTML = `
+                        <div class="card service-card h-100">
+                            <img src="${servicio.imagen || 'https://placehold.co/400x250/e67e22/ffffff?text=' + encodeURIComponent(servicio.nombre)}" 
+                                 class="card-img-top" alt="${servicio.nombre}">
+                            <div class="card-body">
+                                <h5 class="card-title">${servicio.nombre}</h5>
+                                <p class="card-text">${servicio.descripcion || 'Servicio profesional'}</p>
+                                <h6 class="text-primary">$${servicio.precio || 0}</h6>
+                            </div>
+                        </div>
+                    `;
+                    container.appendChild(col);
+                });
+            } catch (error) {
+                console.error('Error al cargar servicios para sección:', error);
+            }
+        }
+
         // Generar calendario
         async function generarCalendario(month, year) {
             const date = new Date(year, month, 1);
@@ -563,105 +756,128 @@
             const primerDiaSemana = date.getDay();
             const hoy = new Date();
             hoy.setHours(0, 0, 0, 0);
-            const hoyStr = hoy.toISOString().split('T')[0];
+            const hoyStr = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
             
-            const mesNombres = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
-                               'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-            mesAnioActual.textContent = `${mesNombres[month]} ${year}`;
-
-            let html = '<tr>';
+            const mesNombres = [
+                'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+                'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+            ];
             
-            // Espacios en blanco para los días antes del primer día del mes
-            for (let i = 0; i < primerDiaSemana; i++) {
-                html += '<td class="empty"></td>';
-            }
-
-            // Días del mes
-            for (let dia = 1; dia <= diasEnMes; dia++) {
-                const fechaStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
-                const fecha = new Date(fechaStr);
-                const esPasado = fecha < hoy;
-                const esFinDeSemana = fecha.getDay() === 0 || fecha.getDay() === 6; // 0 = Domingo, 6 = Sábado
+            document.getElementById('mesAnioActual').textContent = `${mesNombres[month]} ${year}`;
+            
+            // Obtener bloqueos del mes si hay barbero seleccionado
+            let bloqueos = [];
+            if (selectedBarberoId) {
+                const primerDiaMes = `${year}-${String(month + 1).padStart(2, '0')}-01`;
+                const ultimoDiaMes = `${year}-${String(month + 1).padStart(2, '0')}-${String(diasEnMes).padStart(2, '0')}`;
                 
-                let clase = '';
-                if (esPasado) {
-                    clase = 'pasado';
-                } else if (esFinDeSemana) {
-                    clase = 'disabled';
+                try {
+                    const response = await fetch(`${API_BASE_URL}/api/bloqueos/${selectedBarberoId}?fechaInicio=${primerDiaMes}&fechaFin=${ultimoDiaMes}`);
+                    if (response.ok) {
+                        bloqueos = await response.json();
+                    } else {
+                        console.error('Error al obtener bloqueos:', response.status);
+                    }
+                } catch (error) {
+                    console.error('Error al obtener bloqueos:', error);
                 }
-
-                // Verificar si hay bloqueos para este día
-                if (!esPasado && !esFinDeSemana) {
-                    const tieneBloqueo = await verificarBloqueo(selectedBarberoId, fechaStr);
-                    if (tieneBloqueo) {
-                        clase = 'bloqueado';
+            }
+            
+            let html = '';
+            let dia = 1;
+            
+            // Generar filas del calendario
+            for (let i = 0; i < 6; i++) {
+                html += '<tr>';
+                
+                // Generar columnas (días de la semana)
+                for (let j = 0; j < 7; j++) {
+                    if (i === 0 && j < primerDiaSemana) {
+                        // Espacios en blanco antes del primer día del mes
+                        html += '<td class="empty"></td>';
+                    } else if (dia > diasEnMes) {
+                        // Espacios en blanco después del último día del mes
+                        html += '<td class="empty"></td>';
+                    } else {
+                        const fechaCompleta = `${year}-${String(month + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
+                        const fechaObj = new Date(fechaCompleta);
+                        fechaObj.setHours(0, 0, 0, 0);
+                        
+                        const esFinDeSemana = (j === 0 || j === 6); // Domingo o Sábado
+                        const esHoy = (fechaCompleta === hoyStr);
+                        const esPasado = (fechaObj < hoy);
+                        const tieneBloqueo = bloqueos.some(bloqueo => bloqueo.fecha === fechaCompleta);
+                        
+                        let clases = '';
+                        if (esHoy) clases += ' today';
+                        if (tieneBloqueo) clases += ' bloqueado';
+                        if (esFinDeSemana || esPasado) clases += ' disabled';
+                        if (esPasado) clases += ' pasado';
+                        if (selectedDate === fechaCompleta) clases += ' selected';
+                        
+                        html += `<td data-fecha="${fechaCompleta}" class="${clases}">${dia}</td>`;
+                        dia++;
                     }
                 }
-
-                if ((primerDiaSemana + dia - 1) % 7 === 0 && dia !== 1) {
-                    html += '</tr><tr>';
-                }
                 
-                html += `<td class="${clase}" data-fecha="${fechaStr}">${dia}</td>`;
+                html += '</tr>';
+                
+                // Si ya mostramos todos los días, salir del bucle
+                if (dia > diasEnMes) break;
             }
-            html += '</tr>';
-            calendarioBody.innerHTML = html;
-
+            
+            document.getElementById('calendarioBody').innerHTML = html;
+            
             // Agregar event listeners a los días
-            document.querySelectorAll('#calendario td:not(.empty):not(.disabled):not(.pasado):not(.bloqueado)').forEach(cell => {
-                cell.addEventListener('click', async function() {
-                    // Remover clase selected de todos los días
-                    document.querySelectorAll('#calendario td').forEach(td => td.classList.remove('selected'));
-                    
-                    // Agregar clase selected al día seleccionado
-                    this.classList.add('selected');
+            document.querySelectorAll('#calendario td[data-fecha]').forEach(td => {
+                td.addEventListener('click', function() {
                     const fecha = this.dataset.fecha;
-                    selectedDate = fecha;
+                    const esFinDeSemana = this.classList.contains('disabled');
+                    const estaBloqueado = this.classList.contains('bloqueado');
+                    const esPasado = this.classList.contains('pasado');
                     
-                    // Actualizar campo oculto
-                    document.getElementById('fechaSeleccionada').value = fecha;
-                    
-                    // Cargar horarios disponibles y reservados
-                    cargarHorariosDisponibles(fecha);
+                    if (!esFinDeSemana && !estaBloqueado && !esPasado) {
+                        // Remover clase selected de todos los días
+                        document.querySelectorAll('#calendario td.selected').forEach(el => {
+                            el.classList.remove('selected');
+                        });
+                        
+                        // Agregar clase selected al día seleccionado
+                        this.classList.add('selected');
+                        selectedDate = fecha;
+                        
+                        // Actualizar campo oculto
+                        document.getElementById('fechaSeleccionada').value = fecha;
+                        
+                        // Cargar horarios disponibles y reservados
+                        cargarHorariosDisponibles(fecha);
+                    }
                 });
             });
-        }
-
-        // Verificar si hay bloqueos para un barbero en una fecha específica
-        async function verificarBloqueo(barberoId, fecha) {
-            if (!barberoId) return false;
-            
-            try {
-                const response = await fetch(`${API_BASE_URL}/api/bloqueos/${barberoId}?fechaInicio=${fecha}&fechaFin=${fecha}`);
-                if (!response.ok) return false;
-                
-                const bloqueos = await response.json();
-                return bloqueos.length > 0;
-            } catch (error) {
-                console.error('Error al verificar bloqueos:', error);
-                return false;
-            }
         }
 
         // Cargar horarios disponibles y reservados
         async function cargarHorariosDisponibles(fecha) {
             if (!selectedBarberoId || !fecha) {
-                document.getElementById('horariosContainer').innerHTML = '<div class="alert alert-info w-100">Selecciona un barbero y una fecha</div>';
+                document.getElementById('horariosContainer').innerHTML = 
+                    '<div class="alert alert-info w-100">Selecciona un barbero y una fecha</div>';
                 document.getElementById('submitBtn').disabled = true;
                 return;
             }
-
+            
             // Mostrar spinner de carga
-            document.getElementById('horariosContainer').innerHTML = '<div class="spinner-container"><div class="spinner-border" role="status"></div></div>';
-
+            document.getElementById('horariosContainer').innerHTML = 
+                '<div class="spinner-container"><div class="spinner-border" role="status"></div></div>';
+            
             try {
-                // Cargar horarios disponibles desde la API
+                // Cargar horarios disponibles
                 const response = await fetch(`${API_BASE_URL}/api/horarios/${selectedBarberoId}/${fecha}`);
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
+                
                 const horariosDisponibles = await response.json();
-
+                
                 // Cargar horarios reservados para esa fecha
                 const reservasResponse = await fetch(`${API_BASE_URL}/api/reservas-por-fecha/${selectedBarberoId}/${fecha}`);
                 let horariosReservados = [];
@@ -669,11 +885,12 @@
                     const reservas = await reservasResponse.json();
                     horariosReservados = reservas.map(r => r.horarioId);
                 }
-
+                
                 mostrarHorarios(horariosDisponibles, horariosReservados);
             } catch (error) {
                 console.error('Error al cargar horarios:', error);
-                document.getElementById('horariosContainer').innerHTML = '<div class="alert alert-danger w-100">Error al cargar horarios. Por favor intente nuevamente.</div>';
+                document.getElementById('horariosContainer').innerHTML = 
+                    '<div class="alert alert-danger w-100">Error al cargar horarios. Por favor intente nuevamente.</div>';
                 document.getElementById('submitBtn').disabled = true;
             }
         }
@@ -681,120 +898,134 @@
         // Mostrar horarios disponibles y reservados
         function mostrarHorarios(horariosDisponibles, horariosReservados) {
             const container = document.getElementById('horariosContainer');
+            container.innerHTML = '';
+            
+            // Verificar que horariosDisponibles sea un array
+            if (!Array.isArray(horariosDisponibles)) {
+                container.innerHTML = '<div class="alert alert-warning w-100">No hay horarios disponibles</div>';
+                document.getElementById('submitBtn').disabled = true;
+                return;
+            }
             
             if (horariosDisponibles.length === 0) {
                 container.innerHTML = '<div class="alert alert-warning w-100">No hay horarios disponibles para esta fecha</div>';
                 document.getElementById('submitBtn').disabled = true;
                 return;
             }
-
-            let html = '<div class="horarios-container">';
+            
             horariosDisponibles.forEach(horario => {
-                const fechaHora = new Date(horario.fechaHora);
-                const hora = fechaHora.getHours();
-                const minutos = fechaHora.getMinutes().toString().padStart(2, '0');
-                const horaStr = `${hora}:${minutos}`;
-                const estaReservado = horariosReservados.includes(horario.fechaHora);
-                const clase = estaReservado ? 'horario-btn reservado' : 'horario-btn';
-                
-                html += `<div class="${clase}" data-fecha-hora="${horario.fechaHora}">${horaStr}</div>`;
-            });
-            html += '</div>';
-            container.innerHTML = html;
-
-            // Agregar event listeners a los horarios
-            document.querySelectorAll('.horario-btn:not(.reservado)').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    // Remover clase selected de todos los horarios
-                    document.querySelectorAll('.horario-btn').forEach(b => b.classList.remove('selected'));
-                    
-                    // Agregar clase selected al horario seleccionado
-                    this.classList.add('selected');
-                    const fechaHora = this.dataset.fechaHora;
-                    selectedHorarioId = fechaHora;
-                    
-                    // Actualizar campos ocultos
-                    document.getElementById('horarioId').value = fechaHora;
-                    document.getElementById('fechaHoraSeleccionada').value = fechaHora;
-                    
-                    // Habilitar botón de reserva
-                    document.getElementById('submitBtn').disabled = false;
+                const hora = new Date(horario.fechaHora).toLocaleTimeString('es-ES', {
+                    hour: '2-digit',
+                    minute: '2-digit'
                 });
+                
+                const button = document.createElement('div');
+                button.className = 'horario-btn';
+                button.textContent = hora;
+                button.dataset.fechaHora = horario.fechaHora;
+                
+                // Verificar si el horario está reservado
+                const estaReservado = horariosReservados.includes(horario.fechaHora);
+                
+                if (estaReservado) {
+                    button.classList.add('reservado');
+                    button.title = 'Horario ya reservado';
+                } else {
+                    button.addEventListener('click', function() {
+                        // Remover clase selected de todos los botones
+                        document.querySelectorAll('.horario-btn.selected').forEach(el => {
+                            el.classList.remove('selected');
+                        });
+                        
+                        // Agregar clase selected al botón seleccionado
+                        this.classList.add('selected');
+                        
+                        // Actualizar campos ocultos
+                        document.getElementById('horarioId').value = horario.fechaHora;
+                        document.getElementById('fechaHoraSeleccionada').value = 
+                            new Date(horario.fechaHora).toLocaleString('es-ES', {
+                                weekday: 'long',
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                            });
+                        
+                        // Habilitar botón de submit
+                        document.getElementById('submitBtn').disabled = false;
+                    });
+                }
+                
+                container.appendChild(button);
             });
-
-            // Deshabilitar botón si no hay horarios seleccionados
-            if (!selectedHorarioId) {
-                document.getElementById('submitBtn').disabled = true;
-            }
         }
 
         // Manejar cambio de barbero
-        document.getElementById('barbero').addEventListener('change', async function() {
+        document.getElementById('barbero').addEventListener('change', function() {
             selectedBarberoId = this.value;
             selectedDate = null;
             document.getElementById('fechaSeleccionada').value = '';
             document.getElementById('horarioId').value = '';
             document.getElementById('fechaHoraSeleccionada').value = '';
-            document.getElementById('horariosContainer').innerHTML = '<div class="alert alert-info w-100">Selecciona una fecha para ver horarios disponibles</div>';
+            document.getElementById('horariosContainer').innerHTML = 
+                '<div class="alert alert-info w-100">Selecciona una fecha para ver horarios disponibles</div>';
             document.getElementById('submitBtn').disabled = true;
             
-            // Regenerar calendario con verificación de bloqueos
-            await generarCalendario(currentMonth, currentYear);
+            // Regenerar calendario con bloqueos del nuevo barbero
+            generarCalendario(currentMonth, currentYear);
         });
 
         // Navegación del calendario
-        prevMonthBtn.addEventListener('click', async function() {
+        document.getElementById('prevMonth').addEventListener('click', function() {
             currentMonth--;
             if (currentMonth < 0) {
                 currentMonth = 11;
                 currentYear--;
             }
-            await generarCalendario(currentMonth, currentYear);
+            generarCalendario(currentMonth, currentYear);
         });
 
-        nextMonthBtn.addEventListener('click', async function() {
+        document.getElementById('nextMonth').addEventListener('click', function() {
             currentMonth++;
             if (currentMonth > 11) {
                 currentMonth = 0;
                 currentYear++;
             }
-            await generarCalendario(currentMonth, currentYear);
+            generarCalendario(currentMonth, currentYear);
         });
 
         // Manejar envío del formulario
-        reservaForm.addEventListener('submit', async function(e) {
+        document.getElementById('bookingForm').addEventListener('submit', async function(e) {
             e.preventDefault();
+            
+            // Obtener valores del formulario
             const nombre = document.getElementById('nombre').value;
             const celular = document.getElementById('celular').value;
             const servicio = document.getElementById('servicio').value;
             const barberoId = document.getElementById('barbero').value;
             const horarioId = document.getElementById('horarioId').value;
-
-            // Validar que se haya seleccionado un horario
+            
+            // Validar que se haya seleccionado una fecha y hora
             if (!horarioId) {
-                alert('Por favor selecciona un horario disponible');
+                alert('Por favor selecciona una fecha y hora');
                 return;
             }
-
-            // Verificar nuevamente si el horario está reservado
-            const reservasResponse = await fetch(`${API_BASE_URL}/api/reservas-por-fecha/${barberoId}/${selectedDate}`);
-            let horariosReservados = [];
-            if (reservasResponse.ok) {
-                const reservas = await reservasResponse.json();
-                horariosReservados = reservas.map(r => r.horarioId);
-            }
-
-            const estaReservado = horariosReservados.includes(horarioId);
+            
+            // Verificar que el horario no esté reservado
+            const estaReservado = Array.from(document.querySelectorAll('.horario-btn.reservado'))
+                .some(btn => btn.dataset.fechaHora === horarioId);
+            
             if (estaReservado) {
                 alert('Este horario ya está reservado. Por favor selecciona otro horario.');
                 return;
             }
-
+            
             // Deshabilitar botón durante el envío
             const submitBtn = document.getElementById('submitBtn');
             submitBtn.disabled = true;
             submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Procesando...';
-
+            
             try {
                 // Enviar reserva a la API
                 const response = await fetch(`${API_BASE_URL}/api/reservas`, {
@@ -810,44 +1041,50 @@
                         horarioId
                     })
                 });
-
+                
                 if (response.ok) {
-                    const reserva = await response.json();
+                    const result = await response.json();
                     
-                    // Mostrar detalles en el modal
-                    const servicioNombre = serviciosData.find(s => s.id === servicio)?.nombre || 'Servicio';
-                    const barberoNombre = barberosData.find(b => b.id === barberoId)?.nombre || 'Barbero';
-                    const fechaHora = new Date(horarioId);
-                    const opcionesFecha = { 
-                        weekday: 'long', 
-                        year: 'numeric', 
-                        month: 'long', 
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                    };
-                    const fechaHoraStr = fechaHora.toLocaleDateString('es-ES', opcionesFecha);
+                    // Mostrar datos en el modal
+                    document.getElementById('modalNombre').textContent = nombre;
+                    document.getElementById('modalCelular').textContent = celular;
                     
-                    document.getElementById('detalleReserva').innerHTML = `
-                        <li>Nombre: ${nombre}</li>
-                        <li>Celular: ${celular}</li>
-                        <li>Servicio: ${servicioNombre}</li>
-                        <li>Barbero: ${barberoNombre}</li>
-                        <li>Fecha y Hora: ${fechaHoraStr}</li>
-                    `;
+                    const servicioObj = serviciosData.find(s => s.id === servicio);
+                    document.getElementById('modalServicio').textContent = servicioObj ? servicioObj.nombre : 'Servicio';
+                    
+                    const barberoObj = barberosData.find(b => b.id === barberoId);
+                    document.getElementById('modalBarbero').textContent = barberoObj ? barberoObj.nombre : 'Barbero';
+                    
+                    document.getElementById('modalFechaHora').textContent = 
+                        new Date(horarioId).toLocaleString('es-ES', {
+                            weekday: 'long',
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        });
                     
                     // Mostrar modal de confirmación
                     const modal = new bootstrap.Modal(document.getElementById('confirmationModal'));
                     modal.show();
                     
                     // Resetear formulario
-                    reservaForm.reset();
-                    document.getElementById('horariosContainer').innerHTML = '<div class="alert alert-info w-100">Selecciona una fecha para ver horarios disponibles</div>';
+                    document.getElementById('bookingForm').reset();
+                    document.getElementById('horariosContainer').innerHTML = 
+                        '<div class="alert alert-info w-100">Selecciona una fecha para ver horarios disponibles</div>';
                     document.getElementById('submitBtn').disabled = true;
-                    selectedHorarioId = null;
+                    document.getElementById('fechaHoraSeleccionada').value = '';
+                    document.getElementById('fechaSeleccionada').value = '';
+                    document.getElementById('horarioId').value = '';
+                    submitBtn.innerHTML = '<i class="bi bi-calendar-check me-2"></i>Confirmar Reserva';
+                    selectedDate = null;
+                    selectedBarberoId = null;
                     
-                    // Regenerar calendario para reflejar el horario reservado
-                    await generarCalendario(currentMonth, currentYear);
+                    // Limpiar selección en calendario
+                    document.querySelectorAll('#calendario td.selected').forEach(el => {
+                        el.classList.remove('selected');
+                    });
                 } else {
                     const errorData = await response.json().catch(() => ({}));
                     const errorMessage = errorData.error || `Error HTTP: ${response.status}`;
@@ -861,6 +1098,17 @@
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = '<i class="bi bi-calendar-check me-2"></i>Confirmar Reserva';
             }
+        });
+
+        // Cargar datos iniciales
+        document.addEventListener('DOMContentLoaded', async function() {
+            await cargarBarberos();
+            await cargarServicios();
+            await cargarBarberosSeccion();
+            await cargarServiciosSeccion();
+            
+            // Generar calendario inicial
+            generarCalendario(currentMonth, currentYear);
         });
     </script>
 </body>
