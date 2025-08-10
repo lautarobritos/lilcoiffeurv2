@@ -1,14 +1,34 @@
+// app.js
 require('dotenv').config();
 const express = require('express');
 const path = require('path');
-const cors = require('cors'); // 1. Importar el paquete cors
-const { initializeApp } = require('firebase/app');
+const cors = require('cors');
+// --- MANTENER: SDK Cliente de Firebase para operaciones en Firestore ---
+const { initializeApp: initializeClientApp } = require('firebase/app');
 const { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, where, orderBy, setDoc } = require('firebase/firestore');
 
 const app = express();
 
-// Configuración de Firebase
-const firebaseConfig = {
+// --- AGREGAR: Importar Firebase Admin SDK ---
+const admin = require('firebase-admin');
+
+// --- AGREGAR: Inicializar Firebase Admin SDK ---
+// Asegúrate de tener el archivo serviceAccountKey.json en tu proyecto
+let serviceAccount;
+try {
+    serviceAccount = require('./serviceAccountKey.json');
+    admin.initializeApp({
+        credential: admin.credential.cert(serviceAccount)
+    });
+    console.log("Firebase Admin SDK inicializado correctamente.");
+} catch (error) {
+    console.error("Error al inicializar Firebase Admin SDK. Asegúrate de tener el archivo serviceAccountKey.json:", error.message);
+    // Puedes optar por detener el servidor aquí si es crítico
+    // process.exit(1);
+}
+
+// Configuración de Firebase Cliente (para operaciones que no requieren autenticación de admin)
+const firebaseClientConfig = {
     apiKey: process.env.FIREBASE_API_KEY,
     authDomain: process.env.FIREBASE_AUTH_DOMAIN,
     projectId: process.env.FIREBASE_PROJECT_ID,
@@ -17,9 +37,9 @@ const firebaseConfig = {
     appId: process.env.FIREBASE_APP_ID
 };
 
-// Inicializar Firebase
-const firebaseApp = initializeApp(firebaseConfig);
-const db = getFirestore(firebaseApp);
+// Inicializar Firebase Cliente
+const firebaseClientApp = initializeClientApp(firebaseClientConfig);
+const db = getFirestore(firebaseClientApp); // Usar Firestore del cliente
 
 // Configuración de EJS
 app.set('view engine', 'ejs');
@@ -30,33 +50,56 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// 2. Configuración de CORS
+// Configuración de CORS
 const corsOptions = {
-  origin: function (origin, callback) {
-    // Permitir solicitudes sin origen (como mobile apps, curl) y ciertos dominios conocidos
-    const allowedOrigins = [
-      'http://127.0.0.1:3000',
-      'http://127.0.0.1:5500',        // Live Server por defecto
-      'http://localhost:5500',        // Otro puerto común de Live Server
-      'http://127.0.0.1:5501',        // Otro puerto de Live Server
-      'http://localhost:5501',        // Otro puerto de Live Server
-      'http://localhost:3000',        // Si corres el frontend de React en desarrollo
-      'https://lilcoiffeurv2-production.up.railway.app', // Tu backend en Railway
-      // Puedes agregar aquí otros dominios desde los que sirvas tu frontend en producción
-      // Ejemplo: 'https://tu-dominio-personalizado.com'
-    ];
-    // Si no hay origen (peticiones directas) o el origen está en la lista permitida
-    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      callback(new Error('No permitido por CORS'));
-    }
-  },
-  credentials: true, // Habilitar si necesitas enviar cookies o headers de autenticación
-  optionsSuccessStatus: 200
+    origin: function (origin, callback) {
+        const allowedOrigins = [
+            'http://127.0.0.1:3000',
+            'http://127.0.0.1:5500',
+            'http://localhost:5500',
+            'http://127.0.0.1:5501',
+            'http://localhost:5501',
+            'http://localhost:3000',
+            'https://lilcoiffeurv2-production.up.railway.app', // Asegúrate de que no haya espacios
+            // Agrega aquí el dominio de tu frontend en cPanel cuando lo tengas
+            // 'https://tu-dominio-de-cpanel.com'
+        ];
+        if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+            callback(null, true);
+        } else {
+            callback(new Error('No permitido por CORS'));
+        }
+    },
+    credentials: true,
+    optionsSuccessStatus: 200
 };
 
-app.use(cors(corsOptions)); // 3. Usar el middleware cors con las opciones definidas
+app.use(cors(corsOptions));
+
+// --- AGREGAR: Middleware para verificar token de Firebase ---
+const verifyToken = async (req, res, next) => {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({ error: 'Acceso denegado. Token no proporcionado o formato incorrecto (Bearer <token>).', code: 'missing_token' });
+    }
+
+    const idToken = authHeader.split('Bearer ')[1];
+
+    try {
+        // Verificar el token ID de Firebase
+        const decodedToken = await admin.auth().verifyIdToken(idToken);
+        // Agregar información del usuario al objeto req para usarla en las rutas
+        req.user = decodedToken;
+        console.log(`Usuario autenticado: ${decodedToken.email || decodedToken.uid}`);
+        next();
+    } catch (error) {
+        console.error('Error al verificar token de Firebase:', error);
+        if (error.code === 'auth/argument-error' || error.code === 'auth/id-token-expired' || error.code === 'auth/invalid-id-token') {
+            return res.status(401).json({ error: 'Token inválido o expirado.', code: 'invalid_token' });
+        }
+        return res.status(500).json({ error: 'Error interno al verificar autenticación.', code: 'auth_error' });
+    }
+};
 
 // Rutas
 
@@ -65,10 +108,10 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Panel de administración
+// Panel de administración (Sirve el EJS, la autenticación se maneja en el frontend)
 app.get('/admin', async (req, res) => {
     try {
-        res.render('admin', { 
+        res.render('admin', {
             FIREBASE_API_KEY: process.env.FIREBASE_API_KEY,
             FIREBASE_AUTH_DOMAIN: process.env.FIREBASE_AUTH_DOMAIN,
             FIREBASE_PROJECT_ID: process.env.FIREBASE_PROJECT_ID,
@@ -82,9 +125,9 @@ app.get('/admin', async (req, res) => {
     }
 });
 
-// --- API Routes ---
+// --- MODIFICAR: Aplicar middleware verifyToken a las rutas que requieran autenticación ---
 
-// API: Obtener barberos
+// API: Obtener barberos (Puede ser pública si se usa en el frontend)
 app.get('/api/barberos', async (req, res) => {
     try {
         const barberosSnapshot = await getDocs(collection(db, 'barberos'));
@@ -99,8 +142,8 @@ app.get('/api/barberos', async (req, res) => {
     }
 });
 
-// API: Crear barbero
-app.post('/api/barberos', async (req, res) => {
+// API: Crear barbero (Protegida)
+app.post('/api/barberos', verifyToken, async (req, res) => {
     try {
         const barbero = req.body;
         const docRef = await addDoc(collection(db, 'barberos'), barbero);
@@ -111,8 +154,8 @@ app.post('/api/barberos', async (req, res) => {
     }
 });
 
-// API: Actualizar barbero
-app.put('/api/barberos/:id', async (req, res) => {
+// API: Actualizar barbero (Protegida)
+app.put('/api/barberos/:id', verifyToken, async (req, res) => {
     try {
         const id = req.params.id;
         const data = req.body;
@@ -124,8 +167,8 @@ app.put('/api/barberos/:id', async (req, res) => {
     }
 });
 
-// API: Eliminar barbero
-app.delete('/api/barberos/:id', async (req, res) => {
+// API: Eliminar barbero (Protegida)
+app.delete('/api/barberos/:id', verifyToken, async (req, res) => {
     try {
         const id = req.params.id;
         await deleteDoc(doc(db, 'barberos', id));
@@ -136,7 +179,7 @@ app.delete('/api/barberos/:id', async (req, res) => {
     }
 });
 
-// API: Obtener servicios
+// API: Obtener servicios (Puede ser pública si se usa en el frontend)
 app.get('/api/servicios', async (req, res) => {
     try {
         const serviciosSnapshot = await getDocs(collection(db, 'servicios'));
@@ -151,8 +194,8 @@ app.get('/api/servicios', async (req, res) => {
     }
 });
 
-// API: Crear servicio
-app.post('/api/servicios', async (req, res) => {
+// API: Crear servicio (Protegida)
+app.post('/api/servicios', verifyToken, async (req, res) => {
     try {
         const servicio = req.body;
         const docRef = await addDoc(collection(db, 'servicios'), servicio);
@@ -163,8 +206,8 @@ app.post('/api/servicios', async (req, res) => {
     }
 });
 
-// API: Actualizar servicio
-app.put('/api/servicios/:id', async (req, res) => {
+// API: Actualizar servicio (Protegida)
+app.put('/api/servicios/:id', verifyToken, async (req, res) => {
     try {
         const id = req.params.id;
         const data = req.body;
@@ -176,8 +219,8 @@ app.put('/api/servicios/:id', async (req, res) => {
     }
 });
 
-// API: Eliminar servicio
-app.delete('/api/servicios/:id', async (req, res) => {
+// API: Eliminar servicio (Protegida)
+app.delete('/api/servicios/:id', verifyToken, async (req, res) => {
     try {
         const id = req.params.id;
         await deleteDoc(doc(db, 'servicios', id));
@@ -188,7 +231,7 @@ app.delete('/api/servicios/:id', async (req, res) => {
     }
 });
 
-// API: Obtener disponibilidad de un barbero
+// API: Obtener disponibilidad de un barbero (Puede ser pública)
 app.get('/api/disponibilidad/:barberoId', async (req, res) => {
     try {
         const barberoId = req.params.barberoId;
@@ -198,13 +241,13 @@ app.get('/api/disponibilidad/:barberoId', async (req, res) => {
             where('estado', '==', 'disponible'),
             orderBy('fechaHora')
         );
-        
+
         const horariosSnapshot = await getDocs(q);
         const horarios = [];
         horariosSnapshot.forEach((doc) => {
             horarios.push({ id: doc.id, ...doc.data() });
         });
-        
+
         res.json(horarios);
     } catch (error) {
         console.error('Error al obtener disponibilidad:', error);
@@ -212,17 +255,15 @@ app.get('/api/disponibilidad/:barberoId', async (req, res) => {
     }
 });
 
-// API: Crear reserva
+// API: Crear reserva (Puede ser pública para clientes)
 app.post('/api/reservas', async (req, res) => {
     try {
         const { nombre, celular, servicio, barberoId, horarioId } = req.body;
-        
-        // Validar datos requeridos
+
         if (!nombre || !celular || !servicio || !barberoId || !horarioId) {
             return res.status(400).json({ error: 'Faltan datos requeridos' });
         }
-        
-        // Crear reserva
+
         const reserva = {
             nombre,
             celular,
@@ -232,37 +273,28 @@ app.post('/api/reservas', async (req, res) => {
             estado: 'pendiente',
             fechaCreacion: new Date()
         };
-        
+
         const reservaRef = await addDoc(collection(db, 'reservas'), reserva);
-        
-        // Verificar si el documento de horario existe, si no, crearlo
+
         const horarioDocRef = doc(db, 'horarios', horarioId);
         try {
-            // Intentar obtener el documento para ver si existe
-            // getDocs espera una Query, docRef es un DocumentReference
-            // Para verificar existencia, podemos intentar get() o manejar el error como abajo
-            // O usar getDoc(docRef) de 'firebase/firestore'
-            // Vamos a usar updateDoc y capturar el error si no existe
             await updateDoc(horarioDocRef, {
                 estado: 'ocupado',
                 reservaId: reservaRef.id
             });
         } catch (error) {
-            // Si no existe, crearlo
-            if (error.code === 'not-found' || error.code === 13 /* PERMISSION_DENIED podría indicar no existe si las reglas son estrictas */) {
-                 await setDoc(horarioDocRef, {
+            if (error.code === 'not-found' || error.code === 13) {
+                await setDoc(horarioDocRef, {
                     barberoId: barberoId,
                     fechaHora: horarioId,
                     estado: 'ocupado',
                     reservaId: reservaRef.id
                 });
             } else {
-                 // Si es otro error, relanzarlo
-                 throw error;
+                throw error;
             }
-           
         }
-        
+
         res.status(201).json({ id: reservaRef.id, ...reserva });
     } catch (error) {
         console.error('Error al crear reserva:', error);
@@ -270,8 +302,8 @@ app.post('/api/reservas', async (req, res) => {
     }
 });
 
-// API: Obtener reservas para admin
-app.get('/api/reservas', async (req, res) => {
+// API: Obtener reservas para admin (Protegida)
+app.get('/api/reservas', verifyToken, async (req, res) => {
     try {
         const reservasSnapshot = await getDocs(collection(db, 'reservas'));
         const reservas = [];
@@ -285,38 +317,31 @@ app.get('/api/reservas', async (req, res) => {
     }
 });
 
-// API: Actualizar estado de reserva
-app.put('/api/reservas/:id', async (req, res) => {
+// API: Actualizar estado de reserva (Protegida)
+app.put('/api/reservas/:id', verifyToken, async (req, res) => {
     try {
         const reservaId = req.params.id;
         const { estado } = req.body;
-        
-        // Validar estado
+
         if (!['pendiente', 'confirmado', 'rechazado'].includes(estado)) {
             return res.status(400).json({ error: 'Estado inválido' });
         }
-        
-        // Actualizar estado de reserva
+
         await updateDoc(doc(db, 'reservas', reservaId), { estado });
-        
-        // Si se rechaza, liberar el horario
+
         if (estado === 'rechazado') {
             try {
-                // Obtener la reserva para conocer el horarioId
                 const reservaDocSnap = await getDocs(doc(db, 'reservas', reservaId));
                 if (reservaDocSnap.exists()) {
                     const reservaData = reservaDocSnap.data();
                     if (reservaData.horarioId) {
                         const horarioDocRef = doc(db, 'horarios', reservaData.horarioId);
                         try {
-                            // Intentar actualizar el horario
-                             await updateDoc(horarioDocRef, {
+                            await updateDoc(horarioDocRef, {
                                 estado: 'disponible',
                                 reservaId: null
                             });
                         } catch (horarioError) {
-                            // Si el documento de horario no existe, crearlo como disponible
-                            // (Esto podría pasar si se creó manualmente la reserva o hubo un error previo)
                             if (horarioError.code === 'not-found' || horarioError.code === 13) {
                                 await setDoc(horarioDocRef, {
                                     barberoId: reservaData.barberoId,
@@ -325,7 +350,6 @@ app.put('/api/reservas/:id', async (req, res) => {
                                     reservaId: null
                                 });
                             } else {
-                                // Relanzar si es otro error
                                 throw horarioError;
                             }
                         }
@@ -333,10 +357,9 @@ app.put('/api/reservas/:id', async (req, res) => {
                 }
             } catch (horarioError) {
                 console.error('Error al actualizar/liberar horario:', horarioError);
-                // No detener la operación principal por error en horario, pero se registra
             }
         }
-        
+
         res.json({ success: true });
     } catch (error) {
         console.error('Error al actualizar reserva:', error);
@@ -344,30 +367,27 @@ app.put('/api/reservas/:id', async (req, res) => {
     }
 });
 
-// API: Crear bloqueo de disponibilidad
-app.post('/api/bloqueos', async (req, res) => {
+// API: Crear bloqueo de disponibilidad (Protegida)
+app.post('/api/bloqueos', verifyToken, async (req, res) => {
     try {
         const { barberoId, fecha, motivo } = req.body;
-        
-        // Validar datos requeridos
+
         if (!barberoId || !fecha || !motivo) {
             return res.status(400).json({ error: 'Faltan datos requeridos' });
         }
-        
-        // Validar formato de fecha (YYYY-MM-DD)
+
         if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
             return res.status(400).json({ error: 'Formato de fecha inválido. Use YYYY-MM-DD' });
         }
-        
-        // Crear bloqueo
+
         const bloqueo = {
             barberoId,
-            fecha, // Mantener como string para evitar problemas de zona horaria
+            fecha,
             motivo,
             tipo: 'bloqueo',
             createdAt: new Date()
         };
-        
+
         const docRef = await addDoc(collection(db, 'bloqueos'), bloqueo);
         res.status(201).json({ id: docRef.id, ...bloqueo });
     } catch (error) {
@@ -376,17 +396,15 @@ app.post('/api/bloqueos', async (req, res) => {
     }
 });
 
-// API: Eliminar bloqueo de disponibilidad
-app.delete('/api/bloqueos/:id', async (req, res) => {
+// API: Eliminar bloqueo de disponibilidad (Protegida)
+app.delete('/api/bloqueos/:id', verifyToken, async (req, res) => {
     try {
         const id = req.params.id;
-        
-        // Validar ID
+
         if (!id) {
             return res.status(400).json({ error: 'ID de bloqueo requerido' });
         }
-        
-        // Eliminar bloqueo
+
         await deleteDoc(doc(db, 'bloqueos', id));
         res.json({ success: true });
     } catch (error) {
@@ -395,42 +413,39 @@ app.delete('/api/bloqueos/:id', async (req, res) => {
     }
 });
 
-// API: Obtener bloqueos de un barbero en un rango de fechas
-app.get('/api/bloqueos/:barberoId', async (req, res) => {
+// API: Obtener bloqueos de un barbero en un rango de fechas (Puede ser pública o protegida)
+app.get('/api/bloqueos/:barberoId', verifyToken, async (req, res) => {
     try {
         const barberoId = req.params.barberoId;
         const { fechaInicio, fechaFin } = req.query;
-        
-        // Validar que barberoId sea válido
+
         if (!barberoId) {
             return res.status(400).json({ error: 'ID de barbero requerido' });
         }
-        
+
         let q = query(
             collection(db, 'bloqueos'),
             where('barberoId', '==', barberoId)
         );
-        
-        // Solo aplicar filtros de fecha si se proporcionan y tienen formato válido
+
         if (fechaInicio && fechaFin) {
-            // Validar formato de fechas
             if (!/^\d{4}-\d{2}-\d{2}$/.test(fechaInicio) || !/^\d{4}-\d{2}-\d{2}$/.test(fechaFin)) {
                 return res.status(400).json({ error: 'Formato de fecha inválido. Use YYYY-MM-DD' });
             }
-            
+
             q = query(
                 q,
                 where('fecha', '>=', fechaInicio),
                 where('fecha', '<=', fechaFin)
             );
         }
-        
+
         const bloqueosSnapshot = await getDocs(q);
         const bloqueos = [];
         bloqueosSnapshot.forEach((doc) => {
             bloqueos.push({ id: doc.id, ...doc.data() });
         });
-        
+
         res.json(bloqueos);
     } catch (error) {
         console.error('Error al obtener bloqueos:', error);
@@ -438,58 +453,51 @@ app.get('/api/bloqueos/:barberoId', async (req, res) => {
     }
 });
 
-// API: Generar horarios automáticos para un barbero en una fecha
+// API: Generar horarios automáticos para un barbero en una fecha (Puede ser pública)
 app.get('/api/horarios/:barberoId/:fecha', async (req, res) => {
     try {
         const { barberoId, fecha } = req.params;
-        
-        // Validar formato de fecha
+
         if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
             return res.status(400).json({ error: 'Formato de fecha inválido' });
         }
-        
-        // Verificar si la fecha ya pasó
+
         const fechaSeleccionada = new Date(fecha);
         const hoy = new Date();
         hoy.setHours(0, 0, 0, 0);
-        
+
         if (fechaSeleccionada < hoy) {
             return res.json([]);
         }
-        
-        // Verificar si es fin de semana (sábado = 6, domingo = 0)
+
         const diaSemana = fechaSeleccionada.getDay();
         if (diaSemana === 0 || diaSemana === 6) {
             return res.json([]);
         }
-        
-        // Verificar si hay bloqueos para ese día
+
         const bloqueosQuery = query(
             collection(db, 'bloqueos'),
             where('barberoId', '==', barberoId),
             where('fecha', '==', fecha)
         );
-        
+
         const bloqueosSnapshot = await getDocs(bloqueosQuery);
         if (!bloqueosSnapshot.empty) {
-            // Hay bloqueo, no hay horarios disponibles
             return res.json([]);
         }
-        
-        // Generar horarios de 10:00 a 19:00 cada hora
+
         const horarios = [];
         for (let hora = 10; hora <= 18; hora++) {
             const horaCompleta = `${hora.toString().padStart(2, '0')}:00`;
             const fechaHora = `${fecha}T${horaCompleta}:00`;
-            
-            // Verificar si este horario ya está ocupado
+
             const horariosQuery = query(
                 collection(db, 'horarios'),
                 where('barberoId', '==', barberoId),
                 where('fechaHora', '==', fechaHora),
                 where('estado', '==', 'ocupado')
             );
-            
+
             const horariosSnapshot = await getDocs(horariosQuery);
             if (horariosSnapshot.empty) {
                 horarios.push({
@@ -499,7 +507,7 @@ app.get('/api/horarios/:barberoId/:fecha', async (req, res) => {
                 });
             }
         }
-        
+
         res.json(horarios);
     } catch (error) {
         console.error('Error al generar horarios:', error);
@@ -507,21 +515,18 @@ app.get('/api/horarios/:barberoId/:fecha', async (req, res) => {
     }
 });
 
-// API: Obtener reservas por fecha (NUEVO ENDPOINT)
+// API: Obtener reservas por fecha (Puede ser pública)
 app.get('/api/reservas-por-fecha/:barberoId/:fecha', async (req, res) => {
     try {
         const { barberoId, fecha } = req.params;
-        
-        // Validar formato de fecha
+
         if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
             return res.status(400).json({ error: 'Formato de fecha inválido' });
         }
-        
-        // Crear rango de fechas para buscar reservas de ese día
+
         const fechaInicio = new Date(`${fecha}T00:00:00`);
         const fechaFin = new Date(`${fecha}T23:59:59`);
-        
-        // Buscar reservas confirmadas o pendientes para esa fecha
+
         const q = query(
             collection(db, 'reservas'),
             where('barberoId', '==', barberoId),
@@ -529,13 +534,13 @@ app.get('/api/reservas-por-fecha/:barberoId/:fecha', async (req, res) => {
             where('horarioId', '<=', fechaFin.toISOString()),
             where('estado', 'in', ['pendiente', 'confirmado'])
         );
-        
+
         const reservasSnapshot = await getDocs(q);
         const reservas = [];
         reservasSnapshot.forEach((doc) => {
             reservas.push({ id: doc.id, ...doc.data() });
         });
-        
+
         res.json(reservas);
     } catch (error) {
         console.error('Error al obtener reservas por fecha:', error);
