@@ -8,8 +8,8 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- AGREGAR: SDKs de Firebase -->
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/12.1.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/12.1.0/firebase-auth-compat.js"></script>
     <style>
         :root {
             --primary: #2c3e50;
@@ -1356,68 +1356,87 @@
 
         // --- AGREGAR: Generar calendario de disponibilidad ---
         function generarCalendarioDisp(month, year) {
-            const date = new Date(year, month, 1);
-            const diasEnMes = new Date(year, month + 1, 0).getDate();
-            const primerDiaSemana = date.getDay();
-            
-            const hoy = new Date();
-            hoy.setHours(0, 0, 0, 0);
-            
-            const mesNombres = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
-                               'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-            document.getElementById('mesAnioActualDisp').textContent = `${mesNombres[month]} ${year}`;
-            
-            let html = '<tr>';
-            
-            // Espacios en blanco para los días antes del primer día del mes
-            for (let i = 0; i < primerDiaSemana; i++) {
+    // Esta función debe llamarse solo si hay un barbero seleccionado
+    if (!selectedBarberoIdDisp) {
+        document.getElementById('calendarioBodyDisp').innerHTML = '<tr><td colspan="7" class="text-center">Selecciona un barbero para ver su disponibilidad</td></tr>';
+        return;
+    }
+
+    const date = new Date(year, month, 1);
+    const diasEnMes = new Date(year, month + 1, 0).getDate();
+    const primerDiaSemana = date.getDay(); // 0 = Domingo, 1 = Lunes, ..., 6 = Sábado
+
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+    const hoyStr = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
+
+    const mesNombres = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
+                       'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+    document.getElementById('mesAnioActualDisp').textContent = `${mesNombres[month]} ${year}`;
+
+    let html = '';
+    let dia = 1;
+
+    // Generar filas del calendario (máximo 6 semanas)
+    for (let i = 0; i < 6; i++) {
+        html += '<tr>';
+        
+        // Generar columnas (días de la semana)
+        for (let j = 0; j < 7; j++) {
+            if (i === 0 && j < primerDiaSemana) {
+                // Espacios en blanco antes del primer día del mes
                 html += '<td class="empty"></td>';
+            } else if (dia > diasEnMes) {
+                // Espacios en blanco después del último día del mes
+                html += '<td class="empty"></td>';
+            } else {
+                // Día válido del mes
+                const fechaCompleta = `${year}-${String(month + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
+                const fechaObj = new Date(fechaCompleta);
+                fechaObj.setHours(0, 0, 0, 0);
+                
+                const esFinDeSemana = (j === 0); // Domingo (0) o Sábado (6)
+                const esHoy = (fechaCompleta === hoyStr);
+                const esPasado = (fechaObj < hoy);
+                
+                // Verificar si está bloqueado (asumiendo que bloqueosData ya está cargado para el mes)
+                const tieneBloqueo = bloqueosData.some(b => b.fecha === fechaCompleta);
+                
+                let clases = '';
+                if (esHoy) clases += ' today';
+                if (tieneBloqueo) clases += ' bloqueado';
+                if (esFinDeSemana || esPasado) clases += ' disabled';
+                if (esPasado) clases += ' pasado';
+                if (selectedDateDisp === fechaCompleta) clases += ' selected';
+                
+                html += `<td data-fecha="${fechaCompleta}" class="${clases}">${dia}</td>`;
+                dia++;
             }
-            
-            // Días del mes
-            for (let dia = 1; dia <= diasEnMes; dia++) {
-                const fechaStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
-                const fecha = new Date(fechaStr);
-                const esPasado = fecha < hoy;
-                const esFinDeSemana = fecha.getDay() === 0 || fecha.getDay() === 6; // 0 = Domingo, 6 = Sábado
-                
-                let clase = '';
-                if (esPasado) {
-                    clase = 'pasado';
-                } else if (esFinDeSemana) {
-                    clase = 'disabled';
-                }
-                
-                // Verificar si está bloqueado
-                const estaBloqueado = bloqueosData.some(b => b.fecha === fechaStr);
-                if (estaBloqueado) {
-                    clase = 'bloqueado';
-                }
-                
-                if ((primerDiaSemana + dia - 1) % 7 === 0 && dia !== 1) {
-                    html += '</tr><tr>';
-                }
-                
-                html += `<td class="${clase}" data-fecha="${fechaStr}">${dia}</td>`;
-            }
-            
-            html += '</tr>';
-            document.getElementById('calendarioBodyDisp').innerHTML = html;
-            
-            // Agregar event listeners a los días
-            document.querySelectorAll('#calendarioDisponibilidad td:not(.empty):not(.disabled):not(.pasado):not(.bloqueado)').forEach(cell => {
-                cell.addEventListener('click', function() {
-                    // Remover clase selected de todos los días
-                    document.querySelectorAll('#calendarioDisponibilidad td').forEach(td => td.classList.remove('selected'));
-                    
-                    // Agregar clase selected al día seleccionado
-                    this.classList.add('selected');
-                    
-                    selectedDateDisp = this.dataset.fecha;
-                    document.getElementById('fechaBloqueo').value = selectedDateDisp;
-                });
-            });
         }
+        
+        html += '</tr>';
+        
+        // Si ya mostramos todos los días, salir del bucle
+        if (dia > diasEnMes) break;
+    }
+
+    document.getElementById('calendarioBodyDisp').innerHTML = html;
+
+    // Agregar event listeners a los días seleccionables
+    document.querySelectorAll('#calendarioDisponibilidad td[data-fecha]:not(.disabled):not(.pasado):not(.bloqueado)').forEach(cell => {
+        cell.addEventListener('click', function() {
+            // Remover clase selected de todos los días
+            document.querySelectorAll('#calendarioDisponibilidad td').forEach(td => td.classList.remove('selected'));
+            
+            // Agregar clase selected al día seleccionado
+            this.classList.add('selected');
+            
+            selectedDateDisp = this.dataset.fecha;
+            // Actualizar el input de fecha para bloquear
+            document.getElementById('fechaBloqueo').value = selectedDateDisp;
+        });
+    });
+}
 
         // --- AGREGAR: Navegación del calendario de disponibilidad ---
         document.getElementById('prevMonthDisp').addEventListener('click', function() {
