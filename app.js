@@ -41,9 +41,6 @@ const firebaseClientConfig = {
 const firebaseClientApp = initializeClientApp(firebaseClientConfig);
 const db = getFirestore(firebaseClientApp); // Usar Firestore del cliente
 
-// Configuración de EJS
-app.set('view engine', 'ejs');
-app.set('views', path.join(__dirname, 'views'));
 
 // Middleware
 app.use(express.static(path.join(__dirname, 'public')));
