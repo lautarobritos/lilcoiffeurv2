@@ -303,17 +303,42 @@ app.post('/api/reservas', async (req, res) => {
 });
 
 // API: Obtener reservas para admin (Protegida)
+// API: Obtener reservas para admin (Protegida) - Versión corregida
 app.get('/api/reservas', verifyToken, async (req, res) => {
     try {
+        console.log("Iniciando solicitud a /api/reservas"); // <-- Log para debugging
         const reservasSnapshot = await getDocs(collection(db, 'reservas'));
+        console.log(`Obtenidos ${reservasSnapshot.size} documentos`); // <-- Log para debugging
         const reservas = [];
         reservasSnapshot.forEach((doc) => {
-            reservas.push({ id: doc.id, ...doc.data() });
+            console.log(`Procesando documento ID: ${doc.id}`); // <-- Log para debugging
+            const data = doc.data();
+            
+            // Convertir campos de fecha a cadenas ISO para asegurar la serialización
+            const processedData = {
+                id: doc.id,
+                ...data,
+                // Asegúrate de convertir cualquier campo Date a string
+                // Ajusta los nombres de los campos según tu estructura real
+                ...(data.fechaCreacion && data.fechaCreacion.toDate ? 
+                    { fechaCreacion: data.fechaCreacion.toDate().toISOString() } : 
+                    {}),
+                ...(data.horarioId && typeof data.horarioId === 'object' && data.horarioId.toDate ? 
+                    { horarioId: data.horarioId.toDate().toISOString() } : 
+                    {})
+                // Agrega más conversiones si es necesario para otros campos de tipo Timestamp
+            };
+            
+            reservas.push(processedData);
         });
+        console.log("Documentos procesados, enviando respuesta"); // <-- Log para debugging
         res.json(reservas);
     } catch (error) {
-        console.error('Error al obtener reservas:', error);
-        res.status(500).json({ error: 'Error al obtener reservas: ' + error.message });
+        console.error('Error DETALLADO al obtener reservas en /api/reservas:', error); // <-- Log más detallado
+        res.status(500).json({ 
+            error: 'Error interno del servidor al obtener reservas.',
+            message: error.message // Puedes quitar esto en producción si consideras que expone información sensible
+        });
     }
 });
 
