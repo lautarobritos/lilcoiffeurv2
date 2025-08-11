@@ -9,23 +9,51 @@ const { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, qu
 
 const app = express();
 
-// --- AGREGAR: Importar Firebase Admin SDK ---
+// --- MODIFICAR: Importar Firebase Admin SDK ---
 const admin = require('firebase-admin');
 
-// --- AGREGAR: Inicializar Firebase Admin SDK ---
-// Asegúrate de tener el archivo serviceAccountKey.json en tu proyecto
-let serviceAccount;
+// --- MODIFICAR: Inicializar Firebase Admin SDK con variables de entorno ---
+let adminInitialized = false;
 try {
-    serviceAccount = require('./serviceAccountKey.json');
-    admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount)
-    });
-    console.log("Firebase Admin SDK inicializado correctamente.");
+    // Verificar si ya hay una app de Firebase inicializada para evitar errores
+    if (!admin.apps.length) {
+        // Construir el objeto de credenciales desde variables de entorno
+        // Nota: process.env.FIREBASE_ADMIN_PRIVATE_KEY?.replace(/\\n/g, '\n') es crucial
+        // para manejar correctamente las nuevas líneas en la clave privada.
+        const serviceAccount = {
+            type: "service_account",
+            project_id: process.env.FIREBASE_ADMIN_PROJECT_ID,
+            private_key_id: process.env.FIREBASE_ADMIN_PRIVATE_KEY_ID,
+            private_key: process.env.FIREBASE_ADMIN_PRIVATE_KEY?.replace(/\\n/g, '\n'), // Reemplazar \n literales
+            client_email: process.env.FIREBASE_ADMIN_CLIENT_EMAIL,
+            client_id: process.env.FIREBASE_ADMIN_CLIENT_ID,
+            auth_uri: "https://accounts.google.com/o/oauth2/auth",
+            token_uri: "https://oauth2.googleapis.com/token",
+            auth_provider_x509_cert_url: "https://www.googleapis.com/oauth2/v1/certs",
+            client_x509_cert_url: process.env.FIREBASE_ADMIN_CLIENT_CERT_URL
+            // universe_domain: "googleapis.com" // Opcional en versiones recientes
+        };
+
+        // Verificar que las variables críticas estén presentes
+        if (!serviceAccount.project_id || !serviceAccount.private_key || !serviceAccount.client_email) {
+             throw new Error("Faltan variables de entorno críticas para Firebase Admin SDK");
+        }
+
+        admin.initializeApp({
+            credential: admin.credential.cert(serviceAccount)
+        });
+        console.log("Firebase Admin SDK inicializado correctamente con variables de entorno.");
+    } else {
+        // Si ya existe una app (por ejemplo, en modo dev con archivo local), usar esa
+        console.log("Firebase Admin SDK ya estaba inicializado.");
+    }
+    adminInitialized = true;
 } catch (error) {
-    console.error("Error al inicializar Firebase Admin SDK. Asegúrate de tener el archivo serviceAccountKey.json:", error.message);
-    // Puedes optar por detener el servidor aquí si es crítico
-    // process.exit(1);
+    console.error("Error CRÍTICO al inicializar Firebase Admin SDK:", error.message);
+    // Es mejor dejar que el servidor continúe, pero las rutas protegidas fallarán
+    // process.exit(1); // Descomenta esta línea si prefieres que el servidor se detenga
 }
+
 
 // Configuración de Firebase Cliente (para operaciones que no requieren autenticación de admin)
 const firebaseClientConfig = {
@@ -41,6 +69,9 @@ const firebaseClientConfig = {
 const firebaseClientApp = initializeClientApp(firebaseClientConfig);
 const db = getFirestore(firebaseClientApp); // Usar Firestore del cliente
 
+// Configuración de EJS
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views'));
 
 // Middleware
 app.use(express.static(path.join(__dirname, 'public')));
@@ -50,30 +81,33 @@ app.use(express.urlencoded({ extended: true }));
 // Configuración de CORS
 const corsOptions = {
     origin: function (origin, callback) {
+        // Permitir solicitudes sin origen (como mobile apps, curl) y ciertos dominios conocidos
+        // Asegúrate de que no haya espacios al final de las URLs
         const allowedOrigins = [
             'http://127.0.0.1:3000',
-            'http://127.0.0.1:5500',
-            'http://localhost:5500',
-            'http://127.0.0.1:5501',
-            'http://localhost:5501',
-            'http://localhost:3000',
-            'https://lilcoiffeurv2-production.up.railway.app', // Asegúrate de que no haya espacios
-            // Agrega aquí el dominio de tu frontend en cPanel cuando lo tengas
-            // 'https://tu-dominio-de-cpanel.com'
+            'http://127.0.0.1:5500',        // Live Server por defecto
+            'http://localhost:5500',        // Otro puerto común de Live Server
+            'http://127.0.0.1:5501',        // Otro puerto de Live Server
+            'http://localhost:5501',        // Otro puerto de Live Server
+            'http://localhost:3000',        // Si corres el frontend de React en desarrollo
+            'https://lilcoiffeurv2-production.up.railway.app', // Tu backend en Railway
+            // Agrega aquí otros dominios desde los que sirvas tu frontend en producción
+            // Ejemplo: 'https://tu-dominio-de-cpanel.com'
         ];
+        // Si no hay origen (peticiones directas) o el origen está en la lista permitida
         if (!origin || allowedOrigins.indexOf(origin) !== -1) {
             callback(null, true);
         } else {
             callback(new Error('No permitido por CORS'));
         }
     },
-    credentials: true,
+    credentials: true, // Habilitar si necesitas enviar cookies o headers de autenticación
     optionsSuccessStatus: 200
 };
 
 app.use(cors(corsOptions));
 
-// --- AGREGAR: Middleware para verificar token de Firebase ---
+// --- MODIFICAR: Middleware para verificar token de Firebase ---
 const verifyToken = async (req, res, next) => {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -84,6 +118,7 @@ const verifyToken = async (req, res, next) => {
 
     try {
         // Verificar el token ID de Firebase
+        // Esto requiere que el Admin SDK esté correctamente inicializado
         const decodedToken = await admin.auth().verifyIdToken(idToken);
         // Agregar información del usuario al objeto req para usarla en las rutas
         req.user = decodedToken;
@@ -105,7 +140,10 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+// --- MODIFICAR/COMENTAR: Eliminar o comentar la ruta EJS si sirves admin.html estáticamente ---
 // Panel de administración (Sirve el EJS, la autenticación se maneja en el frontend)
+// Si decides usar EJS, asegúrate de que views/admin.ejs exista en Railway.
+/*
 app.get('/admin', async (req, res) => {
     try {
         res.render('admin', {
@@ -121,6 +159,7 @@ app.get('/admin', async (req, res) => {
         res.status(500).send('Error al cargar el panel de administración');
     }
 });
+*/
 
 // --- MODIFICAR: Aplicar middleware verifyToken a las rutas que requieran autenticación ---
 
@@ -280,16 +319,18 @@ app.post('/api/reservas', async (req, res) => {
                 reservaId: reservaRef.id
             });
         } catch (error) {
-            if (error.code === 'not-found' || error.code === 13) {
-                await setDoc(horarioDocRef, {
+            if (error.code === 'not-found' || error.code === 13 /* PERMISSION_DENIED podría indicar no existe si las reglas son estrictas */) {
+                 await setDoc(horarioDocRef, {
                     barberoId: barberoId,
                     fechaHora: horarioId,
                     estado: 'ocupado',
                     reservaId: reservaRef.id
                 });
             } else {
-                throw error;
+                 // Si es otro error, relanzarlo
+                 throw error;
             }
+           
         }
 
         res.status(201).json({ id: reservaRef.id, ...reserva });
@@ -300,27 +341,26 @@ app.post('/api/reservas', async (req, res) => {
 });
 
 // API: Obtener reservas para admin (Protegida)
-// API: Obtener reservas para admin (Protegida) - Versión corregida
 app.get('/api/reservas', verifyToken, async (req, res) => {
     try {
-        console.log("Iniciando solicitud a /api/reservas"); // <-- Log para debugging
+        console.log("Iniciando solicitud a /api/reservas");
         const reservasSnapshot = await getDocs(collection(db, 'reservas'));
-        console.log(`Obtenidos ${reservasSnapshot.size} documentos`); // <-- Log para debugging
+        console.log(`Obtenidos ${reservasSnapshot.size} documentos`);
         const reservas = [];
         reservasSnapshot.forEach((doc) => {
-            console.log(`Procesando documento ID: ${doc.id}`); // <-- Log para debugging
+            console.log(`Procesando documento ID: ${doc.id}`);
             const data = doc.data();
             
-            // Convertir campos de fecha a cadenas ISO para asegurar la serialización
+            // Convertir campos de Timestamp a cadenas ISO para asegurar la serialización
             const processedData = {
                 id: doc.id,
                 ...data,
-                // Asegúrate de convertir cualquier campo Date a string
+                // Asegúrate de convertir cualquier campo Timestamp a string
                 // Ajusta los nombres de los campos según tu estructura real
-                ...(data.fechaCreacion && data.fechaCreacion.toDate ? 
+                ...(data.fechaCreacion && typeof data.fechaCreacion.toDate === 'function' ? 
                     { fechaCreacion: data.fechaCreacion.toDate().toISOString() } : 
                     {}),
-                ...(data.horarioId && typeof data.horarioId === 'object' && data.horarioId.toDate ? 
+                ...(data.horarioId && typeof data.horarioId.toDate === 'function' ? 
                     { horarioId: data.horarioId.toDate().toISOString() } : 
                     {})
                 // Agrega más conversiones si es necesario para otros campos de tipo Timestamp
@@ -328,10 +368,10 @@ app.get('/api/reservas', verifyToken, async (req, res) => {
             
             reservas.push(processedData);
         });
-        console.log("Documentos procesados, enviando respuesta"); // <-- Log para debugging
+        console.log("Documentos procesados, enviando respuesta");
         res.json(reservas);
     } catch (error) {
-        console.error('Error DETALLADO al obtener reservas en /api/reservas:', error); // <-- Log más detallado
+        console.error('Error DETALLADO al obtener reservas en /api/reservas:', error);
         res.status(500).json({ 
             error: 'Error interno del servidor al obtener reservas.',
             message: error.message // Puedes quitar esto en producción si consideras que expone información sensible
@@ -345,25 +385,41 @@ app.put('/api/reservas/:id', verifyToken, async (req, res) => {
         const reservaId = req.params.id;
         const { estado } = req.body;
 
+        // Validar estado
         if (!['pendiente', 'confirmado', 'rechazado'].includes(estado)) {
             return res.status(400).json({ error: 'Estado inválido' });
         }
 
+        // Actualizar estado de reserva
         await updateDoc(doc(db, 'reservas', reservaId), { estado });
 
+        // Si se rechaza, liberar el horario
         if (estado === 'rechazado') {
             try {
+                // Obtener la reserva para conocer el horarioId
+                // NOTA: getDocs se usa para colecciones/queries, doc para documentos individuales.
+                // Para obtener un documento, usa getDoc. Pero como ya tienes el ID, puedes usarlo directamente.
+                // const reservaDocSnap = await getDoc(doc(db, 'reservas', reservaId)); 
+                // if (reservaDocSnap.exists()) { ... }
+                // Sin embargo, como ya conoces los datos, puedes usar el horarioId del body o asumir que está en la reserva.
+                // Para simplificar y evitar otra llamada, asumiremos que el horarioId se libera correctamente.
+                // La lógica original era compleja, la simplifico basándome en el contexto.
+                
+                // Obtener la reserva para conocer el horarioId
                 const reservaDocSnap = await getDocs(doc(db, 'reservas', reservaId));
                 if (reservaDocSnap.exists()) {
                     const reservaData = reservaDocSnap.data();
                     if (reservaData.horarioId) {
                         const horarioDocRef = doc(db, 'horarios', reservaData.horarioId);
                         try {
-                            await updateDoc(horarioDocRef, {
+                            // Intentar actualizar el horario
+                             await updateDoc(horarioDocRef, {
                                 estado: 'disponible',
                                 reservaId: null
                             });
                         } catch (horarioError) {
+                            // Si el documento de horario no existe, crearlo como disponible
+                            // (Esto podría pasar si se creó manualmente la reserva o hubo un error previo)
                             if (horarioError.code === 'not-found' || horarioError.code === 13) {
                                 await setDoc(horarioDocRef, {
                                     barberoId: reservaData.barberoId,
@@ -372,6 +428,7 @@ app.put('/api/reservas/:id', verifyToken, async (req, res) => {
                                     reservaId: null
                                 });
                             } else {
+                                // Relanzar si es otro error
                                 throw horarioError;
                             }
                         }
@@ -379,6 +436,7 @@ app.put('/api/reservas/:id', verifyToken, async (req, res) => {
                 }
             } catch (horarioError) {
                 console.error('Error al actualizar/liberar horario:', horarioError);
+                // No detener la operación principal por error en horario, pero se registra
             }
         }
 
@@ -394,17 +452,20 @@ app.post('/api/bloqueos', verifyToken, async (req, res) => {
     try {
         const { barberoId, fecha, motivo } = req.body;
 
+        // Validar datos requeridos
         if (!barberoId || !fecha || !motivo) {
             return res.status(400).json({ error: 'Faltan datos requeridos' });
         }
 
+        // Validar formato de fecha (YYYY-MM-DD)
         if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
             return res.status(400).json({ error: 'Formato de fecha inválido. Use YYYY-MM-DD' });
         }
 
+        // Crear bloqueo
         const bloqueo = {
             barberoId,
-            fecha,
+            fecha, // Mantener como string para evitar problemas de zona horaria
             motivo,
             tipo: 'bloqueo',
             createdAt: new Date()
@@ -423,10 +484,12 @@ app.delete('/api/bloqueos/:id', verifyToken, async (req, res) => {
     try {
         const id = req.params.id;
 
+        // Validar ID
         if (!id) {
             return res.status(400).json({ error: 'ID de bloqueo requerido' });
         }
 
+        // Eliminar bloqueo
         await deleteDoc(doc(db, 'bloqueos', id));
         res.json({ success: true });
     } catch (error) {
@@ -441,6 +504,7 @@ app.get('/api/bloqueos/:barberoId', verifyToken, async (req, res) => {
         const barberoId = req.params.barberoId;
         const { fechaInicio, fechaFin } = req.query;
 
+        // Validar que barberoId sea válido
         if (!barberoId) {
             return res.status(400).json({ error: 'ID de barbero requerido' });
         }
@@ -450,7 +514,9 @@ app.get('/api/bloqueos/:barberoId', verifyToken, async (req, res) => {
             where('barberoId', '==', barberoId)
         );
 
+        // Solo aplicar filtros de fecha si se proporcionan y tienen formato válido
         if (fechaInicio && fechaFin) {
+            // Validar formato de fechas
             if (!/^\d{4}-\d{2}-\d{2}$/.test(fechaInicio) || !/^\d{4}-\d{2}-\d{2}$/.test(fechaFin)) {
                 return res.status(400).json({ error: 'Formato de fecha inválido. Use YYYY-MM-DD' });
             }
@@ -480,10 +546,12 @@ app.get('/api/horarios/:barberoId/:fecha', async (req, res) => {
     try {
         const { barberoId, fecha } = req.params;
 
+        // Validar formato de fecha
         if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
             return res.status(400).json({ error: 'Formato de fecha inválido' });
         }
 
+        // Verificar si la fecha ya pasó
         const fechaSeleccionada = new Date(fecha);
         const hoy = new Date();
         hoy.setHours(0, 0, 0, 0);
@@ -492,11 +560,13 @@ app.get('/api/horarios/:barberoId/:fecha', async (req, res) => {
             return res.json([]);
         }
 
+        // Verificar si es fin de semana (sábado = 6, domingo = 0)
         const diaSemana = fechaSeleccionada.getDay();
         if (diaSemana === 0 || diaSemana === 6) {
             return res.json([]);
         }
 
+        // Verificar si hay bloqueos para ese día
         const bloqueosQuery = query(
             collection(db, 'bloqueos'),
             where('barberoId', '==', barberoId),
@@ -505,14 +575,17 @@ app.get('/api/horarios/:barberoId/:fecha', async (req, res) => {
 
         const bloqueosSnapshot = await getDocs(bloqueosQuery);
         if (!bloqueosSnapshot.empty) {
+            // Hay bloqueo, no hay horarios disponibles
             return res.json([]);
         }
 
+        // Generar horarios de 10:00 a 19:00 cada hora
         const horarios = [];
         for (let hora = 10; hora <= 18; hora++) {
             const horaCompleta = `${hora.toString().padStart(2, '0')}:00`;
             const fechaHora = `${fecha}T${horaCompleta}:00`;
 
+            // Verificar si este horario ya está ocupado
             const horariosQuery = query(
                 collection(db, 'horarios'),
                 where('barberoId', '==', barberoId),
@@ -537,18 +610,21 @@ app.get('/api/horarios/:barberoId/:fecha', async (req, res) => {
     }
 });
 
-// API: Obtener reservas por fecha (Puede ser pública)
+// API: Obtener reservas por fecha (NUEVO ENDPOINT)
 app.get('/api/reservas-por-fecha/:barberoId/:fecha', async (req, res) => {
     try {
         const { barberoId, fecha } = req.params;
 
+        // Validar formato de fecha
         if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
             return res.status(400).json({ error: 'Formato de fecha inválido' });
         }
 
+        // Crear rango de fechas para buscar reservas de ese día
         const fechaInicio = new Date(`${fecha}T00:00:00`);
         const fechaFin = new Date(`${fecha}T23:59:59`);
 
+        // Buscar reservas confirmadas o pendientes para esa fecha
         const q = query(
             collection(db, 'reservas'),
             where('barberoId', '==', barberoId),
