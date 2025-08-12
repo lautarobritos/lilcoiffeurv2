@@ -1,10 +1,10 @@
-// app.js (migrado a Admin SDK en rutas protegidas)
+// app.js (migrado a Admin SDK y rutas limpias sin .html)
 require('dotenv').config();
 const express = require('express');
 const path = require('path');
 const cors = require('cors');
 
-// SDK Cliente de Firebase (lo mantenemos para endpoints públicos que respeten reglas)
+// SDK Cliente de Firebase (para endpoints públicos que respeten reglas)
 const { initializeApp: initializeClientApp } = require('firebase/app');
 const {
   getFirestore,
@@ -70,7 +70,7 @@ const firebaseClientConfig = {
 const firebaseClientApp = initializeClientApp(firebaseClientConfig);
 const db = getFirestore(firebaseClientApp); // Firestore (cliente) para endpoints públicos
 
-// Configuración de EJS (si lo usas)
+// View engine (opcional)
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
@@ -102,6 +102,19 @@ const corsOptions = {
 };
 app.use(cors(corsOptions));
 
+// --- Rutas "limpias" sin .html ---
+// Index limpio
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+// Admin limpio
+app.get('/admin', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+});
+// Redirecciones opcionales desde .html a rutas limpias
+app.get('/index.html', (req, res) => res.redirect('/'));
+app.get('/admin.html', (req, res) => res.redirect('/admin'));
+
 // --- Middleware de autenticación (Admin) ---
 const verifyToken = async (req, res, next) => {
   if (!adminInitialized || !adb) {
@@ -126,17 +139,10 @@ const verifyToken = async (req, res, next) => {
   }
 };
 
-// --- Rutas estáticas ---
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-
-// app.get('/admin', (req, res) => { /* si usas EJS, render aquí */ });
-
 // ======================
 //  BARBEROS
 // ======================
-// GET (pública - lectura con SDK cliente, debe permitirlo tu regla de Firestore)
+// GET (pública)
 app.get('/api/barberos', async (req, res) => {
   try {
     const snap = await getDocs(collection(db, 'barberos'));
@@ -236,9 +242,8 @@ app.delete('/api/servicios/:id', verifyToken, async (req, res) => {
 });
 
 // ======================
-//  DISPONIBILIDAD / HORARIOS
+//  DISPONIBILIDAD / HORARIOS (público)
 // ======================
-// GET disponibilidad de un barbero (pública)
 app.get('/api/disponibilidad/:barberoId', async (req, res) => {
   try {
     const barberoId = req.params.barberoId;
@@ -257,7 +262,6 @@ app.get('/api/disponibilidad/:barberoId', async (req, res) => {
   }
 });
 
-// Generar horarios para fecha/barbero (pública)
 app.get('/api/horarios/:barberoId/:fecha', async (req, res) => {
   try {
     const { barberoId, fecha } = req.params;
@@ -271,9 +275,8 @@ app.get('/api/horarios/:barberoId/:fecha', async (req, res) => {
     if (fechaSel < hoy) return res.json([]);
 
     const dia = fechaSel.getDay();
-    if (dia === 0 || dia === 6) return res.json([]); // dom/sáb
+    if (dia === 0 || dia === 6) return res.json([]);
 
-    // Bloqueos
     const bloqueosQ = query(
       collection(db, 'bloqueos'),
       where('barberoId', '==', barberoId),
@@ -282,7 +285,6 @@ app.get('/api/horarios/:barberoId/:fecha', async (req, res) => {
     const bloqueosSnap = await getDocs(bloqueosQ);
     if (!bloqueosSnap.empty) return res.json([]);
 
-    // Generar 10-18hs
     const horarios = [];
     for (let h = 10; h <= 18; h++) {
       const hStr = `${h.toString().padStart(2, '0')}:00`;
@@ -334,7 +336,6 @@ app.post('/api/reservas', async (req, res) => {
     try {
       await updateDoc(horarioDocRef, { estado: 'ocupado', reservaId: reservaRef.id });
     } catch (err) {
-      // Si no existe o no hay permisos de update, crear doc
       await setDoc(horarioDocRef, {
         barberoId,
         fechaHora: horarioId,
@@ -476,7 +477,6 @@ app.delete('/api/bloqueos/:id', verifyToken, async (req, res) => {
   }
 });
 
-// GET bloqueos por barbero (protegida; si quieres pública, cambia a SDK cliente y ajusta reglas)
 app.get('/api/bloqueos/:barberoId', verifyToken, async (req, res) => {
   try {
     const { barberoId } = req.params;
