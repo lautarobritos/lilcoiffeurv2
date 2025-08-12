@@ -1,36 +1,31 @@
-// app.js (migrado a Admin SDK y rutas limpias sin .html)
+// app.js (reserva con Admin SDK + rutas limpias)
 require('dotenv').config();
 const express = require('express');
 const path = require('path');
 const cors = require('cors');
 
-// SDK Cliente de Firebase (para endpoints públicos que respeten reglas)
-const { initializeApp: initializeClientApp } = require('firebase/app');
+// ---------------- SDK Cliente (para lecturas públicas que respetan reglas)
+const { initializeApp: initClient } = require('firebase/app');
 const {
   getFirestore,
   collection,
   getDocs,
-  addDoc,
-  updateDoc,
-  deleteDoc,
-  doc,
   query,
   where,
   orderBy,
-  setDoc,
-  getDoc
+  doc
 } = require('firebase/firestore');
 
-// SDK Admin de Firebase (para rutas protegidas - ignora reglas)
+// ---------------- SDK Admin (para escrituras/lecturas protegidas – ignora reglas)
 const admin = require('firebase-admin');
 
 const app = express();
 
-// --- Inicializar Firebase Admin SDK ---
+// --------- Inicializar Firebase Admin
 let adminInitialized = false;
 try {
   if (!admin.apps.length) {
-    const serviceAccount = {
+    const svc = {
       type: 'service_account',
       project_id: process.env.FIREBASE_ADMIN_PROJECT_ID,
       private_key_id: process.env.FIREBASE_ADMIN_PRIVATE_KEY_ID,
@@ -42,24 +37,20 @@ try {
       auth_provider_x509_cert_url: 'https://www.googleapis.com/oauth2/v1/certs',
       client_x509_cert_url: process.env.FIREBASE_ADMIN_CLIENT_CERT_URL
     };
-
-    if (!serviceAccount.project_id || !serviceAccount.private_key || !serviceAccount.client_email) {
-      throw new Error('Faltan variables de entorno críticas para Firebase Admin SDK');
+    if (!svc.project_id || !svc.private_key || !svc.client_email) {
+      throw new Error('Faltan variables de entorno del Admin SDK');
     }
-
-    admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
-    console.log('Firebase Admin SDK inicializado correctamente.');
+    admin.initializeApp({ credential: admin.credential.cert(svc) });
+    console.log('Admin SDK inicializado.');
   }
   adminInitialized = true;
-} catch (error) {
-  console.error('Error CRÍTICO al inicializar Firebase Admin SDK:', error.message);
+} catch (e) {
+  console.error('Error inicializando Admin SDK:', e.message);
 }
-
-// Instancia de Firestore Admin (para rutas protegidas)
 const adb = adminInitialized ? admin.firestore() : null;
 
-// --- Inicializar Firebase Cliente ---
-const firebaseClientConfig = {
+// --------- Inicializar Firebase Cliente (para lecturas públicas)
+const clientConfig = {
   apiKey: process.env.FIREBASE_API_KEY,
   authDomain: process.env.FIREBASE_AUTH_DOMAIN,
   projectId: process.env.FIREBASE_PROJECT_ID,
@@ -67,22 +58,18 @@ const firebaseClientConfig = {
   messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
   appId: process.env.FIREBASE_APP_ID
 };
-const firebaseClientApp = initializeClientApp(firebaseClientConfig);
-const db = getFirestore(firebaseClientApp); // Firestore (cliente) para endpoints públicos
+const clientApp = initClient(clientConfig);
+const db = getFirestore(clientApp);
 
-// View engine (opcional)
-app.set('view engine', 'ejs');
-app.set('views', path.join(__dirname, 'views'));
-
-// Middleware
+// --------- App base
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// CORS
+// CORS (ajustá tu dominio)
 const corsOptions = {
-  origin: function (origin, callback) {
-    const allowedOrigins = [
+  origin: (origin, cb) => {
+    const ok = [
       'http://127.0.0.1:3000',
       'http://127.0.0.1:5500',
       'http://localhost:5500',
@@ -94,417 +81,344 @@ const corsOptions = {
       'https://prueba.lilcoiffeur.uy',
       'https://lilcoiffeur.uy/'
     ];
-    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      callback(new Error('No permitido por CORS'));
-    }
+    if (!origin || ok.includes(origin)) return cb(null, true);
+    cb(new Error('Origen no permitido por CORS'));
   },
-  credentials: true,
-  optionsSuccessStatus: 200
+  credentials: true
 };
 app.use(cors(corsOptions));
 
-// --- Rutas "limpias" sin .html ---
-// Index limpio
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-// Admin limpio
-app.get('/admin', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'admin.html'));
-});
-// Redirecciones opcionales desde .html a rutas limpias
-app.get('/index.html', (req, res) => res.redirect('/'));
-app.get('/admin.html', (req, res) => res.redirect('/admin'));
+// Rutas limpias
+app.get('/', (_, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
+app.get('/admin', (_, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
+app.get('/index.html', (_, res) => res.redirect('/'));
+app.get('/admin.html', (_, res) => res.redirect('/admin'));
 
-// --- Middleware de autenticación (Admin) ---
+// --------- Middleware auth (para endpoints de admin)
 const verifyToken = async (req, res, next) => {
-  if (!adminInitialized || !adb) {
-    return res.status(500).json({ error: 'Firebase Admin no inicializado', code: 'admin_not_initialized' });
-  }
+  if (!adb) return res.status(500).json({ error: 'Admin no inicializado' });
   const authHeader = req.headers.authorization || '';
   if (!authHeader.startsWith('Bearer ')) {
     return res.status(401).json({ error: 'Token faltante o mal formado', code: 'missing_token' });
   }
   const idToken = authHeader.slice(7);
   try {
-    const decoded = await admin.auth().verifyIdToken(idToken);
-    req.user = decoded;
+    req.user = await admin.auth().verifyIdToken(idToken);
     next();
   } catch (e) {
-    console.error('Error al verificar token de Firebase:', e);
-    const authCodes = ['auth/argument-error', 'auth/id-token-expired', 'auth/invalid-id-token'];
-    if (authCodes.includes(e.code)) {
-      return res.status(401).json({ error: 'Token inválido o expirado', code: 'invalid_token' });
-    }
-    return res.status(500).json({ error: 'Error verificando token', code: 'auth_error' });
+    console.error('verifyIdToken:', e);
+    return res.status(401).json({ error: 'Token inválido o expirado', code: 'invalid_token' });
   }
 };
 
-// ======================
-//  BARBEROS
-// ======================
-// GET (pública)
-app.get('/api/barberos', async (req, res) => {
+// ====================== BARBEROS ======================
+// Pública (lectura con SDK cliente – respeta reglas)
+app.get('/api/barberos', async (_req, res) => {
   try {
     const snap = await getDocs(collection(db, 'barberos'));
-    const out = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    res.json(out);
-  } catch (error) {
-    console.error('Error al obtener barberos:', error);
-    res.status(500).json({ error: 'Error al obtener barberos: ' + error.message });
+    res.json(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Error al obtener barberos: ' + e.message });
   }
 });
 
-// POST (protegida - Admin)
+// Admin
 app.post('/api/barberos', verifyToken, async (req, res) => {
   try {
-    const data = req.body;
-    const ref = await adb.collection('barberos').add(data);
-    res.status(201).json({ id: ref.id, ...data });
-  } catch (error) {
-    console.error('Error al crear barbero:', error);
-    res.status(500).json({ error: 'Error al crear barbero: ' + error.message });
+    const ref = await adb.collection('barberos').add(req.body);
+    res.status(201).json({ id: ref.id, ...req.body });
+  } catch (e) {
+    res.status(500).json({ error: 'Error al crear barbero: ' + e.message });
   }
 });
-
-// PUT (protegida - Admin)
 app.put('/api/barberos/:id', verifyToken, async (req, res) => {
   try {
-    const id = req.params.id;
-    await adb.collection('barberos').doc(id).update(req.body);
+    await adb.collection('barberos').doc(req.params.id).update(req.body);
     res.json({ success: true });
-  } catch (error) {
-    console.error('Error al actualizar barbero:', error);
-    res.status(500).json({ error: 'Error al actualizar barbero: ' + error.message });
+  } catch (e) {
+    res.status(500).json({ error: 'Error al actualizar barbero: ' + e.message });
   }
 });
-
-// DELETE (protegida - Admin)
 app.delete('/api/barberos/:id', verifyToken, async (req, res) => {
   try {
-    const id = req.params.id;
-    await adb.collection('barberos').doc(id).delete();
+    await adb.collection('barberos').doc(req.params.id).delete();
     res.json({ success: true });
-  } catch (error) {
-    console.error('Error al eliminar barbero:', error);
-    res.status(500).json({ error: 'Error al eliminar barbero: ' + error.message });
+  } catch (e) {
+    res.status(500).json({ error: 'Error al eliminar barbero: ' + e.message });
   }
 });
 
-// ======================
-//  SERVICIOS
-// ======================
-// GET (pública)
-app.get('/api/servicios', async (req, res) => {
+// ====================== SERVICIOS ======================
+// Pública
+app.get('/api/servicios', async (_req, res) => {
   try {
     const snap = await getDocs(collection(db, 'servicios'));
-    const out = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    res.json(out);
-  } catch (error) {
-    console.error('Error al obtener servicios:', error);
-    res.status(500).json({ error: 'Error al obtener servicios: ' + error.message });
+    res.json(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+  } catch (e) {
+    res.status(500).json({ error: 'Error al obtener servicios: ' + e.message });
   }
 });
 
-// POST (protegida - Admin)
+// Admin
 app.post('/api/servicios', verifyToken, async (req, res) => {
   try {
-    const data = req.body;
-    const ref = await adb.collection('servicios').add(data);
-    res.status(201).json({ id: ref.id, ...data });
-  } catch (error) {
-    console.error('Error al crear servicio:', error);
-    res.status(500).json({ error: 'Error al crear servicio: ' + error.message });
+    const ref = await adb.collection('servicios').add(req.body);
+    res.status(201).json({ id: ref.id, ...req.body });
+  } catch (e) {
+    res.status(500).json({ error: 'Error al crear servicio: ' + e.message });
   }
 });
-
-// PUT (protegida - Admin)
 app.put('/api/servicios/:id', verifyToken, async (req, res) => {
   try {
-    const id = req.params.id;
-    await adb.collection('servicios').doc(id).update(req.body);
+    await adb.collection('servicios').doc(req.params.id).update(req.body);
     res.json({ success: true });
-  } catch (error) {
-    console.error('Error al actualizar servicio:', error);
-    res.status(500).json({ error: 'Error al actualizar servicio: ' + error.message });
+  } catch (e) {
+    res.status(500).json({ error: 'Error al actualizar servicio: ' + e.message });
   }
 });
-
-// DELETE (protegida - Admin)
 app.delete('/api/servicios/:id', verifyToken, async (req, res) => {
   try {
-    const id = req.params.id;
-    await adb.collection('servicios').doc(id).delete();
+    await adb.collection('servicios').doc(req.params.id).delete();
     res.json({ success: true });
-  } catch (error) {
-    console.error('Error al eliminar servicio:', error);
-    res.status(500).json({ error: 'Error al eliminar servicio: ' + error.message });
+  } catch (e) {
+    res.status(500).json({ error: 'Error al eliminar servicio: ' + e.message });
   }
 });
 
-// ======================
-//  DISPONIBILIDAD / HORARIOS (público)
-// ======================
+// ================== HORARIOS / DISPONIBILIDAD (público) ==================
 app.get('/api/disponibilidad/:barberoId', async (req, res) => {
   try {
-    const barberoId = req.params.barberoId;
     const qy = query(
       collection(db, 'horarios'),
-      where('barberoId', '==', barberoId),
+      where('barberoId', '==', req.params.barberoId),
       where('estado', '==', 'disponible'),
       orderBy('fechaHora')
     );
     const snap = await getDocs(qy);
-    const out = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    res.json(out);
-  } catch (error) {
-    console.error('Error al obtener disponibilidad:', error);
-    res.status(500).json({ error: 'Error al obtener disponibilidad: ' + error.message });
+    res.json(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+  } catch (e) {
+    res.status(500).json({ error: 'Error al obtener disponibilidad: ' + e.message });
   }
 });
 
+// Generador simple de horarios filtrando los ocupados y bloqueos
 app.get('/api/horarios/:barberoId/:fecha', async (req, res) => {
   try {
     const { barberoId, fecha } = req.params;
     if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
-      return res.status(400).json({ error: 'Formato de fecha inválido' });
+      return res.status(400).json({ error: 'Fecha inválida (YYYY-MM-DD)' });
     }
 
     const fechaSel = new Date(fecha);
-    const hoy = new Date();
-    hoy.setHours(0, 0, 0, 0);
+    const hoy = new Date(); hoy.setHours(0,0,0,0);
     if (fechaSel < hoy) return res.json([]);
 
-    const dia = fechaSel.getDay();
-    if (dia === 0 || dia === 6) return res.json([]);
+    const dow = fechaSel.getDay();
+    if (dow === 0 || dow === 6) return res.json([]); // domingo/sábado fuera
 
-    const bloqueosQ = query(
+    // Bloqueos
+    const bloqQ = query(
       collection(db, 'bloqueos'),
       where('barberoId', '==', barberoId),
       where('fecha', '==', fecha)
     );
-    const bloqueosSnap = await getDocs(bloqueosQ);
-    if (!bloqueosSnap.empty) return res.json([]);
+    const bloqSnap = await getDocs(bloqQ);
+    if (!bloqSnap.empty) return res.json([]);
 
+    // Producir slots de 10:00 a 18:00
     const horarios = [];
     for (let h = 10; h <= 18; h++) {
-      const hStr = `${h.toString().padStart(2, '0')}:00`;
-      const fechaHora = `${fecha}T${hStr}:00`;
-      const ocupadosQ = query(
+      const hh = `${String(h).padStart(2,'0')}:00`;
+      const fechaHora = `${fecha}T${hh}:00`;
+
+      const ocQ = query(
         collection(db, 'horarios'),
         where('barberoId', '==', barberoId),
         where('fechaHora', '==', fechaHora),
         where('estado', '==', 'ocupado')
       );
-      const ocSnap = await getDocs(ocupadosQ);
+      const ocSnap = await getDocs(ocQ);
       if (ocSnap.empty) {
         horarios.push({ barberoId, fechaHora, estado: 'disponible' });
       }
     }
     res.json(horarios);
-  } catch (error) {
-    console.error('Error al generar horarios:', error);
-    res.status(500).json({ error: 'Error al generar horarios: ' + error.message });
+  } catch (e) {
+    res.status(500).json({ error: 'Error al generar horarios: ' + e.message });
   }
 });
 
-// ======================
-//  RESERVAS
-// ======================
-// Crear reserva (pública)
+// ====================== RESERVAS ======================
+// Crear reserva (PÚBLICO) usando ADMIN SDK + transacción atómica
 app.post('/api/reservas', async (req, res) => {
   try {
+    if (!adb) return res.status(500).json({ error: 'Admin no inicializado' });
+
     const { nombre, celular, servicio, barberoId, horarioId } = req.body;
     if (!nombre || !celular || !servicio || !barberoId || !horarioId) {
       return res.status(400).json({ error: 'Faltan datos requeridos' });
     }
 
-    const reserva = {
-      nombre,
-      celular,
-      servicio,
-      barberoId,
-      horarioId,
-      estado: 'pendiente',
-      fechaCreacion: new Date()
-    };
+    let nuevaReservaId = null;
+    const hRef = adb.collection('horarios').doc(horarioId); // usamos ISO como id
 
-    // Guardar reserva (cliente, depende de reglas)
-    const reservaRef = await addDoc(collection(db, 'reservas'), reserva);
+    await adb.runTransaction(async (t) => {
+      const hSnap = await t.get(hRef);
+      if (hSnap.exists && hSnap.data()?.estado === 'ocupado') {
+        throw new Error('CONFLICT_SLOT');
+      }
 
-    // Marcar horario como ocupado (si no existe, crearlo)
-    const horarioDocRef = doc(db, 'horarios', horarioId);
-    try {
-      await updateDoc(horarioDocRef, { estado: 'ocupado', reservaId: reservaRef.id });
-    } catch (err) {
-      await setDoc(horarioDocRef, {
+      const rRef = adb.collection('reservas').doc();
+      const reserva = {
+        nombre, celular, servicio, barberoId, horarioId,
+        estado: 'pendiente',
+        fechaCreacion: admin.firestore.FieldValue.serverTimestamp()
+      };
+      t.set(rRef, reserva);
+
+      t.set(hRef, {
         barberoId,
         fechaHora: horarioId,
         estado: 'ocupado',
-        reservaId: reservaRef.id
+        reservaId: rRef.id
       }, { merge: true });
-    }
 
-    res.status(201).json({ id: reservaRef.id, ...reserva });
-  } catch (error) {
-    console.error('Error al crear reserva:', error);
-    res.status(500).json({ error: 'Error al crear reserva: ' + error.message });
+      nuevaReservaId = rRef.id;
+    });
+
+    return res.status(201).json({
+      id: nuevaReservaId,
+      nombre, celular, servicio, barberoId, horarioId, estado: 'pendiente'
+    });
+  } catch (e) {
+    if (e.message === 'CONFLICT_SLOT') {
+      return res.status(409).json({ error: 'Ese horario ya fue reservado' });
+    }
+    console.error('POST /api/reservas', e);
+    res.status(500).json({ error: 'Error al crear reserva: ' + e.message });
   }
 });
 
-// Obtener reservas (PROTEGIDA - Admin)
-app.get('/api/reservas', verifyToken, async (req, res) => {
+// Listar reservas (ADMIN)
+app.get('/api/reservas', verifyToken, async (_req, res) => {
   try {
     const snap = await adb.collection('reservas').get();
-    const reservas = snap.docs.map(d => {
+    const out = snap.docs.map(d => {
       const data = d.data();
       return {
         id: d.id,
         ...data,
         fechaCreacion: data.fechaCreacion instanceof admin.firestore.Timestamp
-          ? data.fechaCreacion.toDate().toISOString()
-          : data.fechaCreacion,
-        horarioId: data.horarioId instanceof admin.firestore.Timestamp
-          ? data.horarioId.toDate().toISOString()
-          : data.horarioId
+          ? data.fechaCreacion.toDate().toISOString() : data.fechaCreacion
       };
     });
-    res.json(reservas);
-  } catch (error) {
-    console.error('Error DETALLADO al obtener reservas:', error);
-    res.status(500).json({ error: 'Error interno del servidor al obtener reservas.', message: error.message });
+    res.json(out);
+  } catch (e) {
+    res.status(500).json({ error: 'Error al obtener reservas: ' + e.message });
   }
 });
 
-// Actualizar estado de reserva (PROTEGIDA - Admin)
+// Actualizar estado (ADMIN) y liberar horario si se rechaza
 app.put('/api/reservas/:id', verifyToken, async (req, res) => {
   try {
-    const reservaId = req.params.id;
     const { estado } = req.body;
-    if (!['pendiente', 'confirmado', 'rechazado'].includes(estado)) {
+    if (!['pendiente','confirmado','rechazado'].includes(estado)) {
       return res.status(400).json({ error: 'Estado inválido' });
     }
 
-    await adb.collection('reservas').doc(reservaId).update({ estado });
+    const rRef = adb.collection('reservas').doc(req.params.id);
+    await rRef.update({ estado });
 
     if (estado === 'rechazado') {
-      try {
-        const reservaSnap = await adb.collection('reservas').doc(reservaId).get();
-        if (reservaSnap.exists) {
-          const r = reservaSnap.data();
-          if (r.horarioId) {
-            const hRef = adb.collection('horarios').doc(r.horarioId);
-            await hRef.set({
-              estado: 'disponible',
-              reservaId: null,
-              barberoId: r.barberoId,
-              fechaHora: r.horarioId
-            }, { merge: true });
-          }
+      const rSnap = await rRef.get();
+      if (rSnap.exists) {
+        const r = rSnap.data();
+        if (r.horarioId) {
+          const hRef = adb.collection('horarios').doc(r.horarioId);
+          await hRef.set({
+            estado: 'disponible',
+            reservaId: admin.firestore.FieldValue.delete(),
+            barberoId: r.barberoId,
+            fechaHora: r.horarioId
+          }, { merge: true });
         }
-      } catch (horarioError) {
-        console.error('Error al liberar horario:', horarioError);
       }
     }
 
     res.json({ success: true });
-  } catch (error) {
-    console.error('Error al actualizar reserva:', error);
-    res.status(500).json({ error: 'Error al actualizar reserva: ' + error.message });
+  } catch (e) {
+    res.status(500).json({ error: 'Error al actualizar reserva: ' + e.message });
   }
 });
 
-// Reservas por fecha (pública, lectura con SDK cliente)
+// Reservas por fecha (PÚBLICO) usando ADMIN pero devolviendo SOLO horarioId
 app.get('/api/reservas-por-fecha/:barberoId/:fecha', async (req, res) => {
   try {
+    if (!adb) return res.status(500).json({ error: 'Admin no inicializado' });
     const { barberoId, fecha } = req.params;
     if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
-      return res.status(400).json({ error: 'Formato de fecha inválido' });
+      return res.status(400).json({ error: 'Fecha inválida (YYYY-MM-DD)' });
     }
-    const inicio = new Date(`${fecha}T00:00:00`).toISOString();
-    const fin = new Date(`${fecha}T23:59:59`).toISOString();
+    const inicio = new Date(`${fecha}T00:00:00.000Z`).toISOString();
+    const fin    = new Date(`${fecha}T23:59:59.999Z`).toISOString();
 
-    const qy = query(
-      collection(db, 'reservas'),
-      where('barberoId', '==', barberoId),
-      where('horarioId', '>=', inicio),
-      where('horarioId', '<=', fin),
-      where('estado', 'in', ['pendiente', 'confirmado'])
-    );
-    const snap = await getDocs(qy);
-    const out = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    res.json(out);
-  } catch (error) {
-    console.error('Error al obtener reservas por fecha:', error);
-    res.status(500).json({ error: 'Error al obtener reservas por fecha: ' + error.message });
+    const snap = await adb.collection('reservas')
+      .where('barberoId', '==', barberoId)
+      .where('horarioId', '>=', inicio)
+      .where('horarioId', '<=', fin)
+      .where('estado', 'in', ['pendiente', 'confirmado'])
+      .get();
+
+    const ocupados = snap.docs.map(d => d.data().horarioId).filter(Boolean);
+    res.json(ocupados);
+  } catch (e) {
+    res.status(500).json({ error: 'Error al obtener reservas por fecha: ' + e.message });
   }
 });
 
-// ======================
-//  BLOQUEOS (Admin)
-// ======================
+// ====================== BLOQUEOS (ADMIN para escribir, leer protegido en panel) ======================
 app.post('/api/bloqueos', verifyToken, async (req, res) => {
   try {
     const { barberoId, fecha, motivo } = req.body;
-    if (!barberoId || !fecha || !motivo) {
-      return res.status(400).json({ error: 'Faltan datos requeridos' });
-    }
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
-      return res.status(400).json({ error: 'Formato de fecha inválido. Use YYYY-MM-DD' });
-    }
-    const bloqueo = {
-      barberoId,
-      fecha,
-      motivo,
-      tipo: 'bloqueo',
-      createdAt: new Date()
-    };
-    const ref = await adb.collection('bloqueos').add(bloqueo);
-    res.status(201).json({ id: ref.id, ...bloqueo });
-  } catch (error) {
-    console.error('Error al crear bloqueo:', error);
-    res.status(500).json({ error: 'Error al crear bloqueo: ' + error.message });
+    if (!barberoId || !fecha || !motivo) return res.status(400).json({ error: 'Faltan datos' });
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) return res.status(400).json({ error: 'Fecha inválida' });
+
+    const payload = { barberoId, fecha, motivo, tipo: 'bloqueo', createdAt: new Date() };
+    const ref = await adb.collection('bloqueos').add(payload);
+    res.status(201).json({ id: ref.id, ...payload });
+  } catch (e) {
+    res.status(500).json({ error: 'Error al crear bloqueo: ' + e.message });
   }
 });
 
 app.delete('/api/bloqueos/:id', verifyToken, async (req, res) => {
   try {
-    const id = req.params.id;
-    await adb.collection('bloqueos').doc(id).delete();
+    await adb.collection('bloqueos').doc(req.params.id).delete();
     res.json({ success: true });
-  } catch (error) {
-    console.error('Error al eliminar bloqueo:', error);
-    res.status(500).json({ error: 'Error al eliminar bloqueo: ' + error.message });
+  } catch (e) {
+    res.status(500).json({ error: 'Error al eliminar bloqueo: ' + e.message });
   }
 });
 
+// Lectura de bloqueos para el panel (ADMIN)
 app.get('/api/bloqueos/:barberoId', verifyToken, async (req, res) => {
   try {
-    const { barberoId } = req.params;
+    let q = adb.collection('bloqueos').where('barberoId', '==', req.params.barberoId);
     const { fechaInicio, fechaFin } = req.query;
-    if (!barberoId) return res.status(400).json({ error: 'ID de barbero requerido' });
-
-    let qy = adb.collection('bloqueos').where('barberoId', '==', barberoId);
     if (fechaInicio && fechaFin) {
       if (!/^\d{4}-\d{2}-\d{2}$/.test(fechaInicio) || !/^\d{4}-\d{2}-\d{2}$/.test(fechaFin)) {
-        return res.status(400).json({ error: 'Formato de fecha inválido. Use YYYY-MM-DD' });
+        return res.status(400).json({ error: 'Rango de fecha inválido' });
       }
-      qy = qy.where('fecha', '>=', fechaInicio).where('fecha', '<=', fechaFin);
+      q = q.where('fecha', '>=', fechaInicio).where('fecha', '<=', fechaFin);
     }
-
-    const snap = await qy.get();
-    const out = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    res.json(out);
-  } catch (error) {
-    console.error('Error al obtener bloqueos:', error);
-    res.status(500).json({ error: 'Error al obtener bloqueos: ' + error.message });
+    const snap = await q.get();
+    res.json(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+  } catch (e) {
+    res.status(500).json({ error: 'Error al obtener bloqueos: ' + e.message });
   }
 });
 
-// Puerto
+// --------- Puerto
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Servidor corriendo en puerto ${PORT}`);
-});
+app.listen(PORT, () => console.log(`Servidor en puerto ${PORT}`));
