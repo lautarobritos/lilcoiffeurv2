@@ -89,7 +89,10 @@ const corsOptions = {
       'http://127.0.0.1:5501',
       'http://localhost:5501',
       'http://localhost:3000',
-      'https://lilcoiffeurv2-production.up.railway.app'
+      'https://lilcoiffeurv2-production.up.railway.app',
+      'https://administrador.lilcoiffeur.uy',
+      'https://prueba.lilcoiffeur.uy',
+      'https://lilcoiffeur.uy/'
     ];
     if (!origin || allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
