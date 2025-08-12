@@ -1620,83 +1620,87 @@
 
         // --- AGREGAR: Renderizar reservas ---
         function renderReservas() {
-            const tbody = document.getElementById('reservasTable');
-            tbody.innerHTML = '';
-            
-            // Aplicar filtros
-            const statusFilter = filterStatus.value;
-            const barberFilter = filterBarber.value;
-            const dateFilter = filterDate.value;
-            
-            let reservasFiltradas = reservasData;
-            
-            if (statusFilter) {
-                reservasFiltradas = reservasFiltradas.filter(r => r.estado === statusFilter);
-            }
-            
-            if (barberFilter) {
-                reservasFiltradas = reservasFiltradas.filter(r => r.barberoId === barberFilter);
-            }
-            
-            if (dateFilter) {
-                reservasFiltradas = reservasFiltradas.filter(r => {
-                    if (r.horarioId) {
-                        const reservaDate = new Date(r.horarioId);
-                        const filterDateObj = new Date(dateFilter);
-                        return reservaDate.toDateString() === filterDateObj.toDateString();
-                    }
-                    return false;
-                });
-            }
-            
-            if (reservasFiltradas.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" class="text-center">No se encontraron reservas</td></tr>';
-                return;
-            }
-            
-            reservasFiltradas.forEach(reserva => {
-                const row = document.createElement('tr');
-                
-                // Obtener nombres de barbero y servicio
-                const barbero = barberosData.find(b => b.id === reserva.barberoId);
-                const servicio = serviciosData.find(s => s.id === reserva.servicio);
-                
-                // Formatear fecha y hora
-                const fechaHora = new Date(reserva.horarioId);
-                const opcionesFecha = { 
-                    year: 'numeric', 
-                    month: 'short', 
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                };
-                const fechaHoraFormateada = fechaHora.toLocaleDateString('es-ES', opcionesFecha);
-                
-                row.innerHTML = `
-                    <td>${reserva.nombre}</td>
-                    <td><span class="badge ${getStatusClass(reserva.estado)}">${getStatusText(reserva.estado)}</span></td>
-                    <td><div class="reserva-hora">${fechaHoraFormateada}</div></td>
-                    <td class="d-none d-md-table-cell">${servicio ? servicio.nombre : 'Servicio no encontrado'}</td>
-                    <td class="d-none d-md-table-cell">${barbero ? barbero.nombre : 'Barbero no encontrado'}</td>
-                    <td class="d-none d-md-table-cell">${reserva.celular}</td>
-                    <td class="acciones-col">
-                        <button class="btn btn-sm btn-outline-primary ver-detalle" data-id="${reserva.id}">
-                            <i class="bi bi-eye"></i>
-                        </button>
-                    </td>
-                `;
-                
-                tbody.appendChild(row);
-            });
-            
-            // Agregar event listeners a los botones de ver detalle
-            document.querySelectorAll('.ver-detalle').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const id = this.dataset.id;
-                    mostrarDetalleReserva(id);
-                });
-            });
-        }
+  const tbody = document.getElementById('reservasTable');
+  tbody.innerHTML = '';
+
+  // Filtros (estado, barbero, fecha)
+  const statusFilter = filterStatus.value;
+  const barberFilter = filterBarber.value;
+  const dateFilter = filterDate.value; // <-- viene en "YYYY-MM-DD"
+
+  let reservasFiltradas = Array.isArray(reservasData) ? [...reservasData] : [];
+
+  // Filtrar por estado
+  if (statusFilter) {
+    reservasFiltradas = reservasFiltradas.filter(r => r.estado === statusFilter);
+  }
+
+  // Filtrar por barbero
+  if (barberFilter) {
+    reservasFiltradas = reservasFiltradas.filter(r => r.barberoId === barberFilter);
+  }
+
+  // Filtrar por fecha (evitar timezone issues: comparar por string)
+  if (dateFilter) {
+    reservasFiltradas = reservasFiltradas.filter(r => {
+      // horarioId es string tipo "YYYY-MM-DDTHH:mm:ss"
+      if (typeof r.horarioId === 'string' && r.horarioId.length >= 10) {
+        return r.horarioId.slice(0, 10) === dateFilter;
+      }
+      return false;
+    });
+  }
+
+  if (reservasFiltradas.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" class="text-center">No se encontraron reservas</td></tr>';
+    return;
+  }
+
+  // (Opcional) ordenar por fecha/hora asc
+  reservasFiltradas.sort((a, b) => {
+    const ta = typeof a.horarioId === 'string' ? Date.parse(a.horarioId) : 0;
+    const tb = typeof b.horarioId === 'string' ? Date.parse(b.horarioId) : 0;
+    return ta - tb;
+  });
+
+  reservasFiltradas.forEach(reserva => {
+    const row = document.createElement('tr');
+
+    // Buscar datos de barbero/servicio para mostrar nombres
+    const barbero = barberosData.find(b => b.id === reserva.barberoId);
+    const servicio = serviciosData.find(s => s.id === reserva.servicio);
+
+    // Formatear fecha/hora para la tabla (usa tu helper)
+    const fechaHoraFormateada = typeof reserva.horarioId === 'string'
+      ? formatDateTime(reserva.horarioId)
+      : '—';
+
+    row.innerHTML = `
+      <td>${reserva.nombre || '—'}</td>
+      <td><span class="badge ${getStatusClass(reserva.estado)}">${getStatusText(reserva.estado)}</span></td>
+      <td><div class="reserva-hora">${fechaHoraFormateada}</div></td>
+      <td class="d-none d-md-table-cell">${servicio ? servicio.nombre : 'Servicio no encontrado'}</td>
+      <td class="d-none d-md-table-cell">${barbero ? barbero.nombre : 'Barbero no encontrado'}</td>
+      <td class="d-none d-md-table-cell">${reserva.celular || '—'}</td>
+      <td class="acciones-col">
+        <button class="btn btn-sm btn-outline-primary ver-detalle" data-id="${reserva.id}">
+          <i class="bi bi-eye"></i>
+        </button>
+      </td>
+    `;
+
+    tbody.appendChild(row);
+  });
+
+  // Listeners para abrir modal de detalle
+  document.querySelectorAll('.ver-detalle').forEach(btn => {
+    btn.addEventListener('click', function () {
+      const id = this.dataset.id;
+      mostrarDetalleReserva(id);
+    });
+  });
+}
+
 
         // --- AGREGAR: Mostrar detalle de reserva ---
         function mostrarDetalleReserva(id) {
